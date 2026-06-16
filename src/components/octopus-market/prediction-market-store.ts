@@ -372,6 +372,19 @@ async function postPredictionMarketStateToServer(adminWalletAddress?: string | n
 
   if (isSupabaseConfigured()) {
     try {
+      const walletAddresses = Array.from(
+        new Set(predictionMarketsCache.map((m) => m.createdByWallet).filter(Boolean))
+      );
+      if (walletAddresses.length > 0) {
+        const walletRows = walletAddresses.map((addr) => ({ address: addr }));
+        const { error: walletErr } = await supabase
+          .from("wallets")
+          .upsert(walletRows, { onConflict: "address", ignoreDuplicates: true });
+        if (walletErr) {
+          console.error("[supabase] wallet pre-flight upsert failed:", walletErr.message, walletErr.details);
+        }
+      }
+
       const marketRows = predictionMarketsCache.map((m) => ({
         id: m.id,
         category_id: m.categoryId,
@@ -393,7 +406,19 @@ async function postPredictionMarketStateToServer(adminWalletAddress?: string | n
       }));
 
       if (marketRows.length > 0) {
-        await supabase.from("prediction_markets").upsert(marketRows, { onConflict: "id" });
+        const { error: marketErr } = await supabase.from("prediction_markets").upsert(marketRows, { onConflict: "id" });
+        if (marketErr) {
+          console.error("[supabase] prediction_markets upsert failed:", marketErr.message, marketErr.details);
+          return false;
+        }
+      }
+
+      const resolutionWallets = Array.from(
+        new Set(Object.values(predictionResolutionsCache).map((r) => r.resolvedByWallet).filter(Boolean))
+      );
+      if (resolutionWallets.length > 0) {
+        const rw = resolutionWallets.map((addr) => ({ address: addr }));
+        await supabase.from("wallets").upsert(rw, { onConflict: "address", ignoreDuplicates: true });
       }
 
       const resolutionRows = Object.entries(predictionResolutionsCache).map(([marketId, r]) => ({
@@ -404,11 +429,16 @@ async function postPredictionMarketStateToServer(adminWalletAddress?: string | n
       }));
 
       if (resolutionRows.length > 0) {
-        await supabase.from("prediction_resolutions").upsert(resolutionRows, { onConflict: "market_id" });
+        const { error: resErr } = await supabase.from("prediction_resolutions").upsert(resolutionRows, { onConflict: "market_id" });
+        if (resErr) {
+          console.error("[supabase] prediction_resolutions upsert failed:", resErr.message, resErr.details);
+          return false;
+        }
       }
 
       return true;
-    } catch {
+    } catch (err) {
+      console.error("[supabase] postPredictionMarketStateToServer exception:", err);
       return false;
     }
   }

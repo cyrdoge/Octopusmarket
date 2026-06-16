@@ -266,25 +266,30 @@ async function postToolSocialMutation(path: string, payload: Record<string, unkn
       const actorKey = payload.actorKey as string | undefined;
 
       if (path === "/rate" && actorKey) {
-        await supabase.from("tool_ratings").upsert(
+        const { error } = await supabase.from("tool_ratings").upsert(
           { tool_name: toolName, actor_key: actorKey, rating: payload.rating as number },
           { onConflict: "tool_name,actor_key" }
         );
+        if (error) console.error("[supabase] tool_ratings upsert failed:", error.message, error.details);
       } else if (path === "/react" && actorKey) {
-        await supabase.from("tool_reactions").upsert(
+        const { error } = await supabase.from("tool_reactions").upsert(
           { tool_name: toolName, actor_key: actorKey, reaction: payload.reaction as "heart" | "thumbs-up" | "flame" },
           { onConflict: "tool_name,actor_key" }
         );
+        if (error) console.error("[supabase] tool_reactions upsert failed:", error.message, error.details);
       } else if (path === "/comment") {
-        await supabase.from("tool_comments").insert({
+        const { error } = await supabase.from("tool_comments").insert({
           tool_name: toolName,
           author: payload.author as string,
           content: payload.content as string,
         });
+        if (error) console.error("[supabase] tool_comments insert failed:", error.message, error.details);
       } else if (path === "/report") {
-        await supabase.from("tool_reports").insert({ tool_name: toolName });
+        const { error } = await supabase.from("tool_reports").insert({ tool_name: toolName });
+        if (error) console.error("[supabase] tool_reports insert failed:", error.message, error.details);
       }
-    } catch {
+    } catch (err) {
+      console.error("[supabase] postToolSocialMutation exception:", err);
       return;
     }
     return;

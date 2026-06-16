@@ -285,9 +285,13 @@ async function postAdminNotificationsStateToServer() {
       }));
 
       if (rows.length > 0) {
-        await supabase.from("admin_notifications").upsert(rows, { onConflict: "id" });
+        const { error } = await supabase.from("admin_notifications").upsert(rows, { onConflict: "id" });
+        if (error) {
+          console.error("[supabase] admin_notifications upsert failed:", error.message, error.details);
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error("[supabase] postAdminNotificationsStateToServer exception:", err);
       return;
     }
     return;

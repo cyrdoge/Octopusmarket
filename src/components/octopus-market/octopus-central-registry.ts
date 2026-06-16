@@ -373,7 +373,7 @@ async function postCentralRegistryUpsertToServer<T extends { id?: string; addres
     try {
       if (storeName === walletStoreName) {
         const w = value as unknown as RegistryWalletRecord;
-        await supabase.from("wallets").upsert({
+        const { error } = await supabase.from("wallets").upsert({
           address: w.address,
           role: w.role ?? "user",
           status: w.status ?? "active",
@@ -396,9 +396,12 @@ async function postCentralRegistryUpsertToServer<T extends { id?: string; addres
           total_lost_usdc: w.totalLostUsdc ?? 0,
           total_claimed_usdc: w.totalClaimedUsdc ?? 0,
         }, { onConflict: "address" });
+        if (error) {
+          console.error("[supabase] wallets upsert failed:", error.message, error.details);
+        }
       } else if (storeName === betStoreName || storeName === historyStoreName) {
         const b = value as unknown as RegistryBetRecord;
-        await supabase.from("prediction_bets").upsert({
+        const { error } = await supabase.from("prediction_bets").upsert({
           id: b.id,
           market_id: b.marketId,
           market_title: b.marketTitle,
@@ -427,9 +430,12 @@ async function postCentralRegistryUpsertToServer<T extends { id?: string; addres
           claimed_at: b.claimedAt ? new Date(b.claimedAt).toISOString() : null,
           claim_reference: b.claimReference ?? null,
         }, { onConflict: "id" });
+        if (error) {
+          console.error("[supabase] prediction_bets upsert failed:", error.message, error.details);
+        }
       } else if (storeName === adminLogStoreName) {
         const l = value as unknown as RegistryAdminLogRecord;
-        await supabase.from("admin_logs").upsert({
+        const { error } = await supabase.from("admin_logs").upsert({
           id: l.id,
           admin_wallet: l.adminWallet,
           action: l.action,
@@ -437,8 +443,12 @@ async function postCentralRegistryUpsertToServer<T extends { id?: string; addres
           details: l.details ?? "",
           created_at: new Date(l.createdAt).toISOString(),
         }, { onConflict: "id" });
+        if (error) {
+          console.error("[supabase] admin_logs upsert failed:", error.message, error.details);
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error("[supabase] postCentralRegistryUpsertToServer exception:", err);
       return;
     }
     return;
@@ -466,13 +476,17 @@ async function postCentralRegistryClearToServer(storeName: RegistryStoreName) {
   if (isSupabaseConfigured()) {
     try {
       if (storeName === walletStoreName) {
-        await supabase.from("wallets").delete().neq("address", "");
+        const { error } = await supabase.from("wallets").delete().neq("address", "");
+        if (error) console.error("[supabase] wallets delete failed:", error.message);
       } else if (storeName === betStoreName || storeName === historyStoreName) {
-        await supabase.from("prediction_bets").delete().neq("id", "");
+        const { error } = await supabase.from("prediction_bets").delete().neq("id", "");
+        if (error) console.error("[supabase] prediction_bets delete failed:", error.message);
       } else if (storeName === adminLogStoreName) {
-        await supabase.from("admin_logs").delete().neq("id", "");
+        const { error } = await supabase.from("admin_logs").delete().neq("id", "");
+        if (error) console.error("[supabase] admin_logs delete failed:", error.message);
       }
-    } catch {
+    } catch (err) {
+      console.error("[supabase] postCentralRegistryClearToServer exception:", err);
       return;
     }
     return;

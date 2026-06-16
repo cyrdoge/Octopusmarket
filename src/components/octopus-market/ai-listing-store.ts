@@ -344,9 +344,13 @@ async function postAIListingStateToServer(listings: AIListingSubmission[]) {
       }));
 
       if (rows.length > 0) {
-        await supabase.from("ai_listings").upsert(rows, { onConflict: "id" });
+        const { error } = await supabase.from("ai_listings").upsert(rows, { onConflict: "id" });
+        if (error) {
+          console.error("[supabase] ai_listings upsert failed:", error.message, error.details);
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error("[supabase] postAIListingStateToServer exception:", err);
       return;
     }
     return;
