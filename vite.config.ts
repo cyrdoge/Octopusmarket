@@ -1000,10 +1000,7 @@ function createCentralRegistryRealtimePlugin(): Plugin {
 export default defineConfig({
   base: "/",
   plugins: [
-    react({
-      exclude: [/octopus-locale\.tsx/],
-      jsxRuntime: 'automatic'
-    }),
+    react(),
     supernovaDesignPlugin(),
     errorMonitorPlugin(),
     createAdminSecurityPlugin(),

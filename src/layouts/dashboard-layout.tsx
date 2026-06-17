@@ -3,42 +3,42 @@
  * Dashboard layout for user pages (My Bets, My Winnings, Wallet)
  */
 
-import { Outlet, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Wallet, TrendingUp, Trophy } from "lucide-react";
+import { Outlet } from "react-router-dom";
+import { useThemeMode } from "@/hooks/use-theme-mode";
+import { useWallet } from "@/contexts/wallet-context";
+import { useNavigation } from "@/contexts/navigation-context";
+import { MarketHeader } from "@/components/layout/market-header";
+import { MarketFooter } from "@/components/layout/market-footer";
 
 export function DashboardLayout() {
+  const { isDark, toggleTheme } = useThemeMode();
+  const wallet = useWallet();
+  const nav = useNavigation();
+
   return (
-    <div className="flex min-h-screen gap-6">
-      {/* Sidebar navigation */}
-      <aside className="w-48 border-r bg-sidebar p-4">
-        <h2 className="mb-4 text-lg font-semibold">My Dashboard</h2>
-        <nav className="space-y-2">
-          <Link to="/dashboard/wallet-dashboard">
-            <Button variant="ghost" className="w-full justify-start">
-              <Wallet className="mr-2 size-4" />
-              Wallet
-            </Button>
-          </Link>
-          <Link to="/dashboard/my-bets">
-            <Button variant="ghost" className="w-full justify-start">
-              <TrendingUp className="mr-2 size-4" />
-              My Bets
-            </Button>
-          </Link>
-          <Link to="/dashboard/my-winnings">
-            <Button variant="ghost" className="w-full justify-start">
-              <Trophy className="mr-2 size-4" />
-              My Winnings
-            </Button>
-          </Link>
-        </nav>
-      </aside>
+    <div className="flex min-h-screen flex-col">
+      {/* Header */}
+      <MarketHeader
+        isWalletConnected={wallet.isConnected}
+        walletLabel={wallet.walletDisplayLabel}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
+        onConnectWallet={wallet.connect}
+        onOpenMobileMenu={() => nav.openOverlay("mobile-menu")}
+      />
 
       {/* Main content */}
-      <main className="flex-1 py-6">
-        <Outlet />
+      <main className="flex-1 py-6 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <Outlet />
+        </div>
       </main>
+
+      {/* Footer */}
+      <MarketFooter
+        onListMyAI={() => nav.navigateToPath("/list-my-ai")}
+        onBrowseMarkets={() => nav.navigateToPath("/explore")}
+      />
     </div>
   );
 }

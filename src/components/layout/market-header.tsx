@@ -6,10 +6,12 @@
  */
 
 import { OctopusBrand } from "@/components/octopus-market/octopus-brand";
+import { ADMIN_WALLET_ADDRESS } from "@/components/octopus-market/octopus-market-data";
 import { Button } from "@/components/ui/button";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useNavigate } from "react-router-dom";
+import { useWallet } from "@/contexts/wallet-context";
 import {
   SignIn,
   List,
@@ -30,7 +32,7 @@ type MarketHeaderProps = {
 const navItems = [
   { label: "Home", path: "/" },
   { label: "Explore", path: "/explore" },
-  { label: "Predictions", path: "/prediction-market" },
+  { label: "Predictions", path: "/predictions" },
   { label: "List My AI", path: "/list-my-ai" },
 ];
 
@@ -43,6 +45,7 @@ export function MarketHeader({
   onOpenMobileMenu,
 }: MarketHeaderProps) {
   const navigate = useNavigate();
+  const wallet = useWallet();
 
   return (
     <header className="sticky top-0 z-40 border-b border-orange-100 bg-white backdrop-blur-xl dark:border-white/10 dark:bg-black">
@@ -130,12 +133,14 @@ export function MarketHeader({
 
                 <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
 
-                <DropdownMenu.Item
-                  onClick={() => navigate("/admin")}
-                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
-                >
-                  Admin Center
-                </DropdownMenu.Item>
+                {wallet.isConnected && wallet.walletAddress === ADMIN_WALLET_ADDRESS && (
+                  <DropdownMenu.Item
+                    onClick={() => navigate("/admin")}
+                    className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
+                  >
+                    Admin Center
+                  </DropdownMenu.Item>
+                )}
               </DropdownMenu.Content>
             </DropdownMenu.Root>
           )}
@@ -148,7 +153,7 @@ export function MarketHeader({
             onClick={() => navigate("/list-my-ai")}
             className="bg-orange-500 hover:bg-orange-600 text-white"
           >
-            📝 List My AI
+            List My AI
           </Button>
 
           {/* Mobile Hamburger Menu */}

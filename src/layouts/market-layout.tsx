@@ -15,6 +15,7 @@ import { MarketHeader } from "@/components/layout/market-header";
 import { MarketFooter } from "@/components/layout/market-footer";
 import { AidoLauncher } from "@/components/layout/aido-launcher";
 import { InlinePanel } from "@/components/layout/inline-panel";
+import { ADMIN_WALLET_ADDRESS } from "@/components/octopus-market/octopus-market-data";
 import {
   SignIn,
   SignOut,
@@ -245,22 +246,24 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
       )}
 
       {/* Admin */}
-      <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
-        <p className="px-2 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Admin</p>
-        {adminItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.path}
-              onClick={() => onNavigate(item.path)}
-              className="flex w-full items-center gap-3 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800 transition-colors"
-            >
-              <Icon size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {wallet.isConnected && wallet.walletAddress === ADMIN_WALLET_ADDRESS && (
+        <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
+          <p className="px-2 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Admin</p>
+          {adminItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => onNavigate(item.path)}
+                className="flex w-full items-center gap-3 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <Icon size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Theme Toggle */}
       <div className="border-t border-orange-200 pt-3 dark:border-white/10">

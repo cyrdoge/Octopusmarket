@@ -551,6 +551,7 @@ export const contactItems: HighlightItem[] = [
   { icon: Shield, label: `CA · ${officialTokenAddress}` },
 ];
 
+export const ADMIN_WALLET_ADDRESS = "EsR6usyjCzhgL6dZFqHRsw6pDh7CgvfHtkQzCybJMuCZ";
 export const solanaPaymentAddress = "EsR6usyjCzhgL6dZFqHRsw6pDh7CgvfHtkQzCybJMuCZ";
 export const solanaUsdcMintAddress = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 export const paymentTokenSymbol = "USDC";

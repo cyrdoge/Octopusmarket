@@ -11,11 +11,14 @@ import { MarketLayout } from "@/layouts/market-layout";
 // Pages - to be created
 import { HomePage } from "@/pages/home";
 import { PredictionMarketPage } from "@/pages/prediction-market";
+import { PredictionsPage } from "@/pages/predictions";
 import { LaunchStudioPage } from "@/pages/launch-studio";
 import { ListMyAIPage } from "@/pages/list-my-ai";
 import { ExplorePage } from "@/pages/explore";
 import { PricingPage } from "@/pages/pricing";
+import { DashboardPage } from "@/pages/dashboard";
 import { WalletDashboardPage } from "@/pages/dashboard/wallet-dashboard";
+import { AdminDashboardPage } from "@/pages/dashboard/admin-dashboard";
 import { MyBetsPage } from "@/pages/dashboard/my-bets";
 import { MyWinningsPage } from "@/pages/dashboard/my-winnings";
 
@@ -24,6 +27,7 @@ import { DashboardLayout } from "@/layouts/dashboard-layout";
 import { AdminLayout } from "@/layouts/admin-layout";
 import { AdminCenterPage } from "@/pages/admin/admin-center";
 import { AdminDatabasePage } from "@/pages/admin/admin-database";
+import { AdminAllAIPage } from "@/pages/admin/admin-all-ai";
 
 // Market routes (with shared chrome)
 const marketRoutes: RouteObject[] = [
@@ -34,6 +38,10 @@ const marketRoutes: RouteObject[] = [
   {
     path: "hero",
     element: <HomePage />,
+  },
+  {
+    path: "predictions",
+    element: <PredictionsPage />,
   },
   {
     path: "prediction-market",
@@ -61,11 +69,19 @@ const marketRoutes: RouteObject[] = [
 const dashboardRoutes: RouteObject[] = [
   {
     index: true,
+    element: <DashboardPage />,
+  },
+  {
+    path: "user",
     element: <WalletDashboardPage />,
   },
   {
     path: "wallet-dashboard",
     element: <WalletDashboardPage />,
+  },
+  {
+    path: "admin",
+    element: <AdminDashboardPage />,
   },
   {
     path: "my-bets",
@@ -74,6 +90,14 @@ const dashboardRoutes: RouteObject[] = [
   {
     path: "my-winnings",
     element: <MyWinningsPage />,
+  },
+  {
+    path: "all-ai",
+    element: <AdminAllAIPage />,
+  },
+  {
+    path: "user-data",
+    element: <AdminDatabasePage />,
   },
 ];
 
@@ -86,10 +110,6 @@ const adminRoutes: RouteObject[] = [
   {
     path: "control",
     element: <AdminCenterPage />,
-  },
-  {
-    path: "database",
-    element: <AdminDatabasePage />,
   },
 ];
 
