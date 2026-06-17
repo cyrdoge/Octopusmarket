@@ -6,10 +6,10 @@
  */
 
 import { OctopusBrand } from "@/components/octopus-market/octopus-brand";
-import { ThemeToggle } from "@/components/octopus-market/theme-toggle";
 import { Button } from "@/components/ui/button";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useNavigate } from "react-router-dom";
 import {
   SignIn,
   List,
@@ -42,6 +42,8 @@ export function MarketHeader({
   onConnectWallet,
   onOpenMobileMenu,
 }: MarketHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <header className="sticky top-0 z-40 border-b border-orange-100 bg-white backdrop-blur-xl dark:border-white/10 dark:bg-black">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
@@ -73,17 +75,14 @@ export function MarketHeader({
         <div className="hidden gap-3 lg:flex lg:items-center lg:flex-shrink-0">
           {/* Connect Wallet Button (shown when NOT connected) */}
           {!isWalletConnected && (
-            <>
-              <Button
-                size="sm"
-                onClick={onConnectWallet}
-                className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
-              >
-                <SignIn size={16} weight="bold" />
-                {walletLabel}
-              </Button>
-              <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
-            </>
+            <Button
+              size="sm"
+              onClick={onConnectWallet}
+              className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
+            >
+              <SignIn size={16} weight="bold" />
+              {walletLabel}
+            </Button>
           )}
 
           {/* Dropdown Menu (shown when connected on desktop) */}
@@ -110,62 +109,54 @@ export function MarketHeader({
                 </DropdownMenu.Label>
                 <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
 
-                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
+                <DropdownMenu.Item
+                  onClick={() => navigate("/dashboard")}
+                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
+                >
                   Dashboard
                 </DropdownMenu.Item>
-                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
+                <DropdownMenu.Item
+                  onClick={() => navigate("/dashboard/my-bets")}
+                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
+                >
                   My Bets
                 </DropdownMenu.Item>
-                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
+                <DropdownMenu.Item
+                  onClick={() => navigate("/dashboard/my-winnings")}
+                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
+                >
                   My Winnings
                 </DropdownMenu.Item>
 
                 <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
 
-                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
-                  Admin Center
-                </DropdownMenu.Item>
-
-                <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
-
                 <DropdownMenu.Item
-                  onClick={onToggleTheme}
-                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer flex items-center gap-2"
+                  onClick={() => navigate("/admin")}
+                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
                 >
-                  {isDark ? (
-                    <>
-                      <Sun size={16} />
-                      Light Mode
-                    </>
-                  ) : (
-                    <>
-                      <Moon size={16} />
-                      Dark Mode
-                    </>
-                  )}
+                  Admin Center
                 </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
           )}
         </div>
 
-        {/* Mobile: Only Connect Wallet + Menu */}
+        {/* Mobile: List My AI CTA + Hamburger Menu */}
         <div className="flex lg:hidden items-center gap-2">
-          {!isWalletConnected && (
-            <Button
-              size="sm"
-              onClick={onConnectWallet}
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-            >
-              <SignIn size={16} weight="bold" />
-            </Button>
-          )}
+          <Button
+            size="sm"
+            onClick={() => navigate("/list-my-ai")}
+            className="bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            📝 List My AI
+          </Button>
 
-          {/* Mobile Menu (always visible on mobile) */}
+          {/* Mobile Hamburger Menu */}
           <Button
             variant="ghost"
             size="icon"
             onClick={onOpenMobileMenu}
+            className="text-zinc-700 dark:text-white dark:hover:bg-zinc-800"
           >
             <List size={24} weight="bold" />
           </Button>
