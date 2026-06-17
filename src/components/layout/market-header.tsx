@@ -28,10 +28,10 @@ type MarketHeaderProps = {
 };
 
 const navItems = [
-  { label: "Home", path: "#/" },
-  { label: "Explore", path: "#/explore" },
-  { label: "Predictions", path: "#/prediction-market" },
-  { label: "List My AI", path: "#/list-my-ai" },
+  { label: "Home", path: "/" },
+  { label: "Explore", path: "/explore" },
+  { label: "Predictions", path: "/prediction-market" },
+  { label: "List My AI", path: "/list-my-ai" },
 ];
 
 export function MarketHeader({

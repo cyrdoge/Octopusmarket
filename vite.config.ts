@@ -1008,6 +1008,7 @@ export default defineConfig({
     createAIListingsRealtimePlugin(),
     createCentralRegistryRealtimePlugin(),
     createPredictionMarketsRealtimePlugin(),
+    createHistoryApiFallbackPlugin(),
     react(),
     tailwindcss(),
     createServeGeneratedCssPlugin(),
@@ -1185,5 +1186,39 @@ function createGeneratedCssMiddleware() {
       console.warn(`Could not read ${fileName}:`, err);
       next();
     }
+  };
+}
+
+function createHistoryApiFallbackPlugin(): Plugin {
+  return {
+    name: "history-api-fallback",
+    configureServer(server) {
+      return () => {
+        server.middlewares.use((req: any, res: any, next: any) => {
+          const url = req.url ?? "";
+
+          if (req.method !== "GET") {
+            return next();
+          }
+
+          if (url.startsWith("/api/") || url.startsWith("/__")) {
+            return next();
+          }
+
+          if (url.includes(".") && !url.endsWith(".html")) {
+            return next();
+          }
+
+          const indexPath = resolve(__dirname, "index.html");
+          if (!existsSync(indexPath)) {
+            return next();
+          }
+
+          const indexContent = readFileSync(indexPath, "utf-8");
+          res.setHeader("Content-Type", "text/html");
+          res.end(indexContent);
+        });
+      };
+    },
   };
 }

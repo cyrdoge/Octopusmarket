@@ -57,8 +57,8 @@ export function MarketLayout() {
 
       {/* Footer */}
       <MarketFooter
-        onListMyAI={() => nav.navigateToPath("#/list-my-ai")}
-        onBrowseMarkets={() => nav.navigateToPath("#/explore")}
+        onListMyAI={() => nav.navigateToPath("/list-my-ai")}
+        onBrowseMarkets={() => nav.navigateToPath("/explore")}
       />
 
       {/* Aido Launcher (floating buttons) */}
@@ -94,7 +94,7 @@ export function MarketLayout() {
       >
         <div className="p-6">
           <button
-            onClick={() => nav.navigateToPath("#/explore")}
+            onClick={() => nav.navigateToPath("/explore")}
             className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
           >
             Open Full Explorer →
@@ -113,7 +113,7 @@ export function MarketLayout() {
       >
         <div className="p-6">
           <button
-            onClick={() => nav.navigateToPath("#/prediction-market")}
+            onClick={() => nav.navigateToPath("/prediction-market")}
             className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
           >
             Open Full Market →
@@ -132,7 +132,7 @@ export function MarketLayout() {
       >
         <div className="p-6">
           <button
-            onClick={() => nav.navigateToPath("#/launch-token")}
+            onClick={() => nav.navigateToPath("/launch-token")}
             className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
           >
             Open Studio →
@@ -151,7 +151,7 @@ export function MarketLayout() {
       >
         <div className="p-6">
           <button
-            onClick={() => nav.navigateToPath("#/list-my-ai")}
+            onClick={() => nav.navigateToPath("/list-my-ai")}
             className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600"
           >
             Open Studio →
@@ -191,14 +191,14 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
   const { isDark, toggleTheme } = useThemeMode();
 
   const dashboardItems = [
-    { label: "Wallet", path: "#/dashboard/wallet-dashboard", icon: Wallet },
-    { label: "My Bets", path: "#/dashboard/my-bets", icon: ChartBar },
-    { label: "My Winnings", path: "#/dashboard/my-winnings", icon: ChartBar },
+    { label: "Wallet", path: "/dashboard/wallet-dashboard", icon: Wallet },
+    { label: "My Bets", path: "/dashboard/my-bets", icon: ChartBar },
+    { label: "My Winnings", path: "/dashboard/my-winnings", icon: ChartBar },
   ];
 
   const adminItems = [
-    { label: "Admin Center", path: "#/admin/control", icon: GearSix },
-    { label: "Database", path: "#/admin/database", icon: Database },
+    { label: "Admin Center", path: "/admin/control", icon: GearSix },
+    { label: "Database", path: "/admin/database", icon: Database },
   ];
 
   return (

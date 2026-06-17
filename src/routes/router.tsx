@@ -1,10 +1,10 @@
 /**
  * src/routes/router.tsx
  * Main application router with layout hierarchy
- * Uses HashRouter for backward compatibility with existing #hash links
+ * Uses BrowserRouter for clean URLs (without hash)
  */
 
-import { createHashRouter, RouteObject } from "react-router-dom";
+import { createBrowserRouter, RouteObject } from "react-router-dom";
 import { RootLayout } from "@/layouts/root-layout";
 import { MarketLayout } from "@/layouts/market-layout";
 
@@ -117,4 +117,4 @@ const routes: RouteObject[] = [
   },
 ];
 
-export const router = createHashRouter(routes);
+export const router = createBrowserRouter(routes);

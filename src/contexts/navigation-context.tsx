@@ -5,6 +5,7 @@
  */
 
 import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export type OverlayType = "aido" | "predictions" | "launch-token" | "list-ai" | "explore" | "mobile-menu" | null;
 
@@ -21,20 +22,20 @@ type NavigationContextType = {
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>(null);
-  const [currentPath, setCurrentPath] = useState(window.location.hash || "#/");
+  const [currentPath, setCurrentPath] = useState(window.location.pathname || "/");
 
-  // Sync overlay state with hash changes (for direct URL navigation)
+  // Sync overlay state with URL changes (for direct URL navigation)
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      setCurrentPath(hash || "#/");
-      // Close overlay when hash changes (user navigated to a different page)
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname || "/");
+      // Close overlay when user navigates via back/forward
       setActiveOverlay(null);
     };
 
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   const openOverlay = useCallback((overlay: OverlayType) => {
@@ -54,10 +55,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const navigateToPath = useCallback((path: string) => {
-    window.location.hash = path;
+    navigate(path);
     setCurrentPath(path);
     scrollToTop();
-  }, [scrollToTop]);
+  }, [navigate, scrollToTop]);
 
   return (
     <NavigationContext.Provider
