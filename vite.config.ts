@@ -1000,6 +1000,7 @@ function createCentralRegistryRealtimePlugin(): Plugin {
 export default defineConfig({
   base: "./",
   plugins: [
+    react({ jsxRuntime: 'automatic' }),
     supernovaDesignPlugin(),
     errorMonitorPlugin(),
     createAdminSecurityPlugin(),
@@ -1009,7 +1010,6 @@ export default defineConfig({
     createCentralRegistryRealtimePlugin(),
     createPredictionMarketsRealtimePlugin(),
     createHistoryApiFallbackPlugin(),
-    react(),
     tailwindcss(),
     createServeGeneratedCssPlugin(),
   ],
