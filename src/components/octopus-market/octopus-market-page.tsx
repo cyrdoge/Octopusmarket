@@ -1,3 +1,15 @@
+/**
+ * DEPRECATED: This monolithic component has been refactored into a modern layout-based architecture.
+ * All functionality has been migrated to:
+ * - src/layouts/ (RootLayout, MarketLayout, DashboardLayout, AdminLayout)
+ * - src/pages/ (individual page components)
+ * - src/contexts/ (WalletProvider, NavigationProvider)
+ * - src/routes/router.tsx (centralized routing)
+ *
+ * This file is preserved for reference but should NOT be used.
+ * Use src/app.tsx and src/routes/router.tsx instead.
+ */
+
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { ArrowLeft, ArrowUpToLine, Check, Clock3, Copy, Database, ExternalLink, Globe, LogOut, Menu, Receipt, Rocket, Search, ShieldCheck, Wallet, X } from "lucide-react";
 
