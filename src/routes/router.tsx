@@ -100,6 +100,7 @@ const routes: RouteObject[] = [
     errorElement: <div>Error loading app</div>,
     children: [
       {
+        path: "",
         element: <MarketLayout />,
         children: marketRoutes,
       },
