@@ -37,7 +37,6 @@ export function MarketLayout() {
         isDark={isDark}
         onToggleTheme={toggleTheme}
         onConnectWallet={wallet.connect}
-        onDisconnectWallet={wallet.disconnect}
         onOpenMobileMenu={() => nav.openOverlay("mobile-menu")}
       />
 
@@ -181,18 +180,6 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
   const wallet = useWallet();
   const { isDark, toggleTheme } = useThemeMode();
 
-  const mainMenuItems = [
-    { label: "Home", path: "#/", icon: "🏠" },
-    { label: "Explore AI", path: "#/explore", icon: "🔍" },
-    { label: "Predictions", path: "#/prediction-market", icon: "📊" },
-    { label: "Pricing", path: "#/listing-price", icon: "💰" },
-  ];
-
-  const studioItems = [
-    { label: "Launch Token", path: "#/launch-token", icon: "🚀" },
-    { label: "List My AI", path: "#/list-my-ai", icon: "📝" },
-  ];
-
   const dashboardItems = [
     { label: "Wallet", path: "#/dashboard/wallet-dashboard", icon: "👛" },
     { label: "My Bets", path: "#/dashboard/my-bets", icon: "📊" },
@@ -211,14 +198,14 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
         {wallet.isConnected ? (
           <>
             <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-xs dark:border-white/10 dark:bg-zinc-900">
-              <p className="text-zinc-600 dark:text-zinc-400">Connected</p>
-              <p className="mt-1 font-mono font-semibold">{wallet.walletDisplayLabel}</p>
+              <p className="text-zinc-600 dark:text-zinc-400">Wallet Connected</p>
+              <p className="mt-1 font-mono font-semibold text-xs">{wallet.walletDisplayLabel}</p>
             </div>
             <button
               onClick={() => wallet.disconnect()}
               className="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
             >
-              Disconnect
+              Disconnect Wallet
             </button>
           </>
         ) : (
@@ -231,39 +218,9 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
         )}
       </div>
 
-      {/* Main Navigation */}
-      <div className="space-y-1">
-        <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Main</p>
-        {mainMenuItems.map((item) => (
-          <button
-            key={item.path}
-            onClick={() => onNavigate(item.path)}
-            className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800"
-          >
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Studio Section */}
-      <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
-        <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Studio</p>
-        {studioItems.map((item) => (
-          <button
-            key={item.path}
-            onClick={() => onNavigate(item.path)}
-            className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800"
-          >
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Dashboard Section (show only when connected) */}
+      {/* Dashboard (only when connected) */}
       {wallet.isConnected && (
-        <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
+        <div className="space-y-1 border-b border-orange-200 pb-3 dark:border-white/10">
           <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Dashboard</p>
           {dashboardItems.map((item) => (
             <button
@@ -278,8 +235,8 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
         </div>
       )}
 
-      {/* Admin Section */}
-      <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
+      {/* Admin */}
+      <div className="space-y-1 border-b border-orange-200 pb-3 dark:border-white/10">
         <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Admin</p>
         {adminItems.map((item) => (
           <button
@@ -294,7 +251,7 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
       </div>
 
       {/* Theme Toggle */}
-      <div className="border-t border-orange-200 pt-3 dark:border-white/10">
+      <div className="pt-3">
         <button
           onClick={toggleTheme}
           className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
