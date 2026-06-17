@@ -181,12 +181,27 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
   const wallet = useWallet();
   const { isDark, toggleTheme } = useThemeMode();
 
-  const menuItems = [
+  const mainMenuItems = [
     { label: "Home", path: "#/", icon: "🏠" },
     { label: "Explore AI", path: "#/explore", icon: "🔍" },
     { label: "Predictions", path: "#/prediction-market", icon: "📊" },
-    { label: "Launch Token", path: "#/launch-token", icon: "🚀" },
     { label: "Pricing", path: "#/listing-price", icon: "💰" },
+  ];
+
+  const studioItems = [
+    { label: "Launch Token", path: "#/launch-token", icon: "🚀" },
+    { label: "List My AI", path: "#/list-my-ai", icon: "📝" },
+  ];
+
+  const dashboardItems = [
+    { label: "Wallet", path: "#/dashboard/wallet-dashboard", icon: "👛" },
+    { label: "My Bets", path: "#/dashboard/my-bets", icon: "📊" },
+    { label: "My Winnings", path: "#/dashboard/my-winnings", icon: "🏆" },
+  ];
+
+  const adminItems = [
+    { label: "Admin Center", path: "#/admin/control", icon: "⚙️" },
+    { label: "Database", path: "#/admin/database", icon: "🗄️" },
   ];
 
   return (
@@ -216,9 +231,57 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
         )}
       </div>
 
-      {/* Navigation Menu */}
+      {/* Main Navigation */}
       <div className="space-y-1">
-        {menuItems.map((item) => (
+        <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Main</p>
+        {mainMenuItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => onNavigate(item.path)}
+            className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800"
+          >
+            <span>{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Studio Section */}
+      <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
+        <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Studio</p>
+        {studioItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => onNavigate(item.path)}
+            className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800"
+          >
+            <span>{item.icon}</span>
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Dashboard Section (show only when connected) */}
+      {wallet.isConnected && (
+        <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
+          <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Dashboard</p>
+          {dashboardItems.map((item) => (
+            <button
+              key={item.path}
+              onClick={() => onNavigate(item.path)}
+              className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800"
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Admin Section */}
+      <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
+        <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Admin</p>
+        {adminItems.map((item) => (
           <button
             key={item.path}
             onClick={() => onNavigate(item.path)}
@@ -231,7 +294,7 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
       </div>
 
       {/* Theme Toggle */}
-      <div className="border-t border-orange-200 pt-4 dark:border-white/10">
+      <div className="border-t border-orange-200 pt-3 dark:border-white/10">
         <button
           onClick={toggleTheme}
           className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
