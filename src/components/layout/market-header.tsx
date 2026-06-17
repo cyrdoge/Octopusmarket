@@ -1,14 +1,22 @@
 /**
  * src/components/layout/market-header.tsx
- * Market header with responsive navigation
- * Desktop: Home | Explore | Predictions | List AI | Connect Wallet / Menu
- * Mobile: Connect Wallet | Menu
+ * Market header with Radix UI components
+ * Desktop: Navigation Menu + Connect Wallet / Dropdown Menu
+ * Mobile: Connect Wallet + Hamburger Menu
  */
 
 import { OctopusBrand } from "@/components/octopus-market/octopus-brand";
 import { ThemeToggle } from "@/components/octopus-market/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Wallet, Menu } from "lucide-react";
+import * as NavigationMenu from "@radix-ui/react-navigation-menu";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+  SignIn,
+  List,
+  Moon,
+  Sun,
+  CaretDown,
+} from "@phosphor-icons/react";
 
 type MarketHeaderProps = {
   isWalletConnected: boolean;
@@ -44,17 +52,22 @@ export function MarketHeader({
         </div>
 
         {/* Center: Desktop Navigation (hidden on mobile/tablet) */}
-        <nav className="hidden flex-1 items-center justify-center gap-8 lg:flex">
-          {navItems.map((item) => (
-            <a
-              key={item.path}
-              href={item.path}
-              className="text-sm font-medium text-zinc-700 transition-colors hover:text-orange-600 dark:text-zinc-300 dark:hover:text-orange-400"
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
+        <NavigationMenu.Root className="hidden lg:block">
+          <NavigationMenu.List className="flex gap-8">
+            {navItems.map((item) => (
+              <NavigationMenu.Item key={item.path}>
+                <NavigationMenu.Link asChild>
+                  <a
+                    href={item.path}
+                    className="text-sm font-medium text-zinc-700 transition-colors hover:text-orange-600 dark:text-zinc-300 dark:hover:text-orange-400"
+                  >
+                    {item.label}
+                  </a>
+                </NavigationMenu.Link>
+              </NavigationMenu.Item>
+            ))}
+          </NavigationMenu.List>
+        </NavigationMenu.Root>
 
         {/* Right: Desktop Actions (hidden on mobile/tablet) */}
         <div className="hidden gap-3 lg:flex lg:items-center lg:flex-shrink-0">
@@ -64,24 +77,75 @@ export function MarketHeader({
               <Button
                 size="sm"
                 onClick={onConnectWallet}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
+                className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
               >
-                <Wallet className="mr-2 size-4" />
+                <SignIn size={16} weight="bold" />
                 {walletLabel}
               </Button>
               <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
             </>
           )}
 
-          {/* Menu Button (shown when connected on desktop) */}
+          {/* Dropdown Menu (shown when connected on desktop) */}
           {isWalletConnected && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onOpenMobileMenu}
-            >
-              <Menu className="size-5" />
-            </Button>
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <List size={20} weight="bold" />
+                  <CaretDown size={14} />
+                </Button>
+              </DropdownMenu.Trigger>
+
+              <DropdownMenu.Content
+                className="min-w-48 rounded-lg border border-orange-200 bg-white shadow-lg dark:border-white/10 dark:bg-zinc-950"
+                align="end"
+                sideOffset={8}
+              >
+                <DropdownMenu.Label className="px-4 py-2 text-sm font-semibold text-zinc-900 dark:text-white">
+                  Menu
+                </DropdownMenu.Label>
+                <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
+
+                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
+                  Dashboard
+                </DropdownMenu.Item>
+                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
+                  My Bets
+                </DropdownMenu.Item>
+                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
+                  My Winnings
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
+
+                <DropdownMenu.Item className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer">
+                  Admin Center
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
+
+                <DropdownMenu.Item
+                  onClick={onToggleTheme}
+                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer flex items-center gap-2"
+                >
+                  {isDark ? (
+                    <>
+                      <Sun size={16} />
+                      Light Mode
+                    </>
+                  ) : (
+                    <>
+                      <Moon size={16} />
+                      Dark Mode
+                    </>
+                  )}
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
           )}
         </div>
 
@@ -93,7 +157,7 @@ export function MarketHeader({
               onClick={onConnectWallet}
               className="bg-orange-500 hover:bg-orange-600 text-white"
             >
-              <Wallet className="size-4" />
+              <SignIn size={16} weight="bold" />
             </Button>
           )}
 
@@ -103,7 +167,7 @@ export function MarketHeader({
             size="icon"
             onClick={onOpenMobileMenu}
           >
-            <Menu className="size-5" />
+            <List size={24} weight="bold" />
           </Button>
         </div>
       </div>

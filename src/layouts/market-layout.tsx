@@ -15,6 +15,16 @@ import { MarketHeader } from "@/components/layout/market-header";
 import { MarketFooter } from "@/components/layout/market-footer";
 import { AidoLauncher } from "@/components/layout/aido-launcher";
 import { InlinePanel } from "@/components/layout/inline-panel";
+import {
+  SignIn,
+  SignOut,
+  Wallet,
+  ChartBar,
+  Moon,
+  Sun,
+  GearSix,
+  Database,
+} from "@phosphor-icons/react";
 
 const LazyCyrDogeChat = lazy(() =>
   import("@/components/octopus-market/cyrdoge-chat").then((m) => ({
@@ -181,32 +191,34 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
   const { isDark, toggleTheme } = useThemeMode();
 
   const dashboardItems = [
-    { label: "Wallet", path: "#/dashboard/wallet-dashboard", icon: "👛" },
-    { label: "My Bets", path: "#/dashboard/my-bets", icon: "📊" },
-    { label: "My Winnings", path: "#/dashboard/my-winnings", icon: "🏆" },
+    { label: "Wallet", path: "#/dashboard/wallet-dashboard", icon: Wallet },
+    { label: "My Bets", path: "#/dashboard/my-bets", icon: ChartBar },
+    { label: "My Winnings", path: "#/dashboard/my-winnings", icon: ChartBar },
   ];
 
   const adminItems = [
-    { label: "Admin Center", path: "#/admin/control", icon: "⚙️" },
-    { label: "Database", path: "#/admin/database", icon: "🗄️" },
+    { label: "Admin Center", path: "#/admin/control", icon: GearSix },
+    { label: "Database", path: "#/admin/database", icon: Database },
   ];
 
   return (
-    <>
+    <div className="space-y-4 p-4">
       {/* Wallet Controls */}
       <div className="space-y-2 border-b border-orange-200 pb-4 dark:border-white/10">
         {!wallet.isConnected ? (
           <button
             onClick={() => wallet.connect()}
-            className="w-full rounded-lg bg-orange-500 px-3 py-2 text-sm text-white hover:bg-orange-600"
+            className="w-full rounded-lg bg-orange-500 px-4 py-3 text-sm font-medium text-white hover:bg-orange-600 transition-colors flex items-center justify-center gap-2"
           >
+            <SignIn size={18} weight="bold" />
             Connect Wallet
           </button>
         ) : (
           <button
             onClick={() => wallet.disconnect()}
-            className="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+            className="w-full rounded-lg border border-orange-200 bg-white px-4 py-3 text-sm font-medium hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2"
           >
+            <SignOut size={18} weight="bold" />
             Disconnect
           </button>
         )}
@@ -214,46 +226,61 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
 
       {/* Dashboard (only when connected) */}
       {wallet.isConnected && (
-        <div className="space-y-1 border-b border-orange-200 pb-3 dark:border-white/10">
-          <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Dashboard</p>
-          {dashboardItems.map((item) => (
-            <button
-              key={item.path}
-              onClick={() => onNavigate(item.path)}
-              className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800"
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
+        <div className="space-y-1">
+          <p className="px-2 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Dashboard</p>
+          {dashboardItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.path}
+                onClick={() => onNavigate(item.path)}
+                className="flex w-full items-center gap-3 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <Icon size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
 
       {/* Admin */}
-      <div className="space-y-1 border-b border-orange-200 pb-3 dark:border-white/10">
-        <p className="px-3 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Admin</p>
-        {adminItems.map((item) => (
-          <button
-            key={item.path}
-            onClick={() => onNavigate(item.path)}
-            className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800"
-          >
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
+      <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
+        <p className="px-2 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Admin</p>
+        {adminItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.path}
+              onClick={() => onNavigate(item.path)}
+              className="flex w-full items-center gap-3 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800 transition-colors"
+            >
+              <Icon size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Theme Toggle */}
-      <div className="pt-3">
+      <div className="border-t border-orange-200 pt-3 dark:border-white/10">
         <button
           onClick={toggleTheme}
-          className="flex w-full items-center gap-2 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          className="flex w-full items-center gap-3 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors"
         >
-          <span>{isDark ? "☀️" : "🌙"}</span>
-          <span>{isDark ? "Light Mode" : "Dark Mode"}</span>
+          {isDark ? (
+            <>
+              <Sun size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
+              <span>Light Mode</span>
+            </>
+          ) : (
+            <>
+              <Moon size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
+              <span>Dark Mode</span>
+            </>
+          )}
         </button>
       </div>
-    </>
+    </div>
   );
 }
