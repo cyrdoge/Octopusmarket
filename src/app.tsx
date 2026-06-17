@@ -1,14 +1,13 @@
-import { SnErrorBoundary } from "../supernova/helpers/snErrorBoundary";
+/**
+ * src/app.tsx
+ * NEW: Mount RouterProvider instead of OctopusMarketPage
+ * RootLayout handles all providers
+ * main.tsx remains UNCHANGED
+ */
 
-import { OctopusLocaleProvider } from "@/components/octopus-market/octopus-locale";
-import { OctopusMarketPage } from "@/components/octopus-market/octopus-market-page";
+import { RouterProvider } from "react-router-dom";
+import { router } from "@/routes/router";
 
 export default function App() {
-  return (
-    <OctopusLocaleProvider>
-      <SnErrorBoundary>
-        <OctopusMarketPage />
-      </SnErrorBoundary>
-    </OctopusLocaleProvider>
-  );
+  return <RouterProvider router={router} />;
 }
