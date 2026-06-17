@@ -56,10 +56,10 @@ export function InlinePanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       {side === "left" ? (
         <div
-          className={`flex h-full w-full max-w-[96vw] flex-col overflow-hidden border-r border-orange-200 bg-white text-zinc-950 shadow-2xl dark:border-white/10 dark:bg-zinc-950 dark:text-white sm:max-w-sm ${className ?? ""}`}
+          className={`flex h-full w-full max-w-[96vw] flex-col overflow-hidden border-r border-orange-200 bg-white text-zinc-950 shadow-2xl dark:border-white/10 dark:bg-zinc-950 dark:text-white sm:max-w-sm animate-in slide-in-from-left duration-300 ${className ?? ""}`}
         >
           <div className="flex items-start justify-between gap-4 border-b border-orange-100 bg-white/90 px-5 py-5 backdrop-blur-sm dark:border-white/10 dark:bg-zinc-950/85">
             <div>
@@ -86,7 +86,7 @@ export function InlinePanel({
 
       {side === "right" ? (
         <div
-          className={`ml-auto flex h-full w-full max-w-[96vw] flex-col overflow-hidden border-l border-orange-200 bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_12%,#fff7ed_100%)] text-zinc-950 shadow-2xl dark:border-white/10 dark:bg-[linear-gradient(180deg,#09090b_0%,#18181b_18%,#09090b_100%)] dark:text-white lg:max-w-[1320px] ${className ?? ""}`}
+          className={`ml-auto flex h-full w-full max-w-[96vw] flex-col overflow-hidden border-l border-orange-200 bg-[linear-gradient(180deg,#fff7ed_0%,#ffffff_12%,#fff7ed_100%)] text-zinc-950 shadow-2xl dark:border-white/10 dark:bg-[linear-gradient(180deg,#09090b_0%,#18181b_18%,#09090b_100%)] dark:text-white lg:max-w-[1320px] animate-in slide-in-from-right duration-300 ${className ?? ""}`}
         >
           <div className="flex items-start justify-between gap-4 border-b border-orange-100 bg-white/90 px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-5 dark:border-white/10 dark:bg-zinc-950/85">
             <div>
