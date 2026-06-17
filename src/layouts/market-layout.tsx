@@ -195,25 +195,19 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
     <>
       {/* Wallet Controls */}
       <div className="space-y-2 border-b border-orange-200 pb-4 dark:border-white/10">
-        {wallet.isConnected ? (
-          <>
-            <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 text-xs dark:border-white/10 dark:bg-zinc-900">
-              <p className="text-zinc-600 dark:text-zinc-400">Wallet Connected</p>
-              <p className="mt-1 font-mono font-semibold text-xs">{wallet.walletDisplayLabel}</p>
-            </div>
-            <button
-              onClick={() => wallet.disconnect()}
-              className="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
-            >
-              Disconnect Wallet
-            </button>
-          </>
-        ) : (
+        {!wallet.isConnected ? (
           <button
             onClick={() => wallet.connect()}
             className="w-full rounded-lg bg-orange-500 px-3 py-2 text-sm text-white hover:bg-orange-600"
           >
             Connect Wallet
+          </button>
+        ) : (
+          <button
+            onClick={() => wallet.disconnect()}
+            className="w-full rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          >
+            Disconnect
           </button>
         )}
       </div>
