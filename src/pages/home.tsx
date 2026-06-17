@@ -33,14 +33,14 @@ export function HomePage() {
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
-                  onClick={() => navigate("#explore")}
+                  onClick={() => navigate("/explore")}
                   className="h-11 rounded-2xl bg-orange-500 px-6 text-white hover:bg-orange-600"
                 >
                   <TrendingUp className="mr-2 size-4" />
                   Explore AI Tools
                 </Button>
                 <Button
-                  onClick={() => navigate("#prediction-market")}
+                  onClick={() => navigate("/prediction-market")}
                   variant="outline"
                   className="h-11 rounded-2xl px-6"
                 >
@@ -79,7 +79,7 @@ export function HomePage() {
               Get your AI product on Octopus Market with our comprehensive launch platform.
             </p>
             <Button
-              onClick={() => navigate("#launch-token")}
+              onClick={() => navigate("/launch-token")}
               className="mt-6 h-11 rounded-2xl bg-orange-500 px-8 text-white hover:bg-orange-600"
             >
               <Rocket className="mr-2 size-4" />

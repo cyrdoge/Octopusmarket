@@ -29,7 +29,7 @@ export function RootLayout() {
             <PredictionProvider>
               <MarketProvider>
                 <ChatProvider>
-                  <div id="root" className="min-h-screen bg-background text-foreground">
+                  <div className="min-h-screen bg-background text-foreground">
                     <Outlet />
                   </div>
                 </ChatProvider>
