@@ -998,7 +998,7 @@ function createCentralRegistryRealtimePlugin(): Plugin {
 }
 
 export default defineConfig({
-  base: "./",
+  base: "/",
   plugins: [
     react({ jsxRuntime: 'automatic' }),
     supernovaDesignPlugin(),
