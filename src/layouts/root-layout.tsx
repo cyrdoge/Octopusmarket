@@ -5,6 +5,9 @@
  * - SnErrorBoundary (existing)
  * - WalletProvider (wallet state)
  * - NavigationProvider (overlay & navigation state)
+ * - PredictionProvider (prediction market state)
+ * - MarketProvider (AI market state)
+ * - ChatProvider (Aido chat state)
  * - Outlet for child routes
  */
 
@@ -13,6 +16,9 @@ import { SnErrorBoundary } from "../../supernova/helpers/snErrorBoundary";
 import { OctopusLocaleProvider } from "@/components/octopus-market/octopus-locale";
 import { WalletProvider } from "@/contexts/wallet-context";
 import { NavigationProvider } from "@/contexts/navigation-context";
+import { PredictionProvider } from "@/contexts/prediction-provider";
+import { MarketProvider } from "@/contexts/market-provider";
+import { ChatProvider } from "@/contexts/chat-provider";
 
 export function RootLayout() {
   return (
@@ -20,9 +26,15 @@ export function RootLayout() {
       <OctopusLocaleProvider>
         <WalletProvider>
           <NavigationProvider>
-            <div id="root" className="min-h-screen bg-background text-foreground">
-              <Outlet />
-            </div>
+            <PredictionProvider>
+              <MarketProvider>
+                <ChatProvider>
+                  <div id="root" className="min-h-screen bg-background text-foreground">
+                    <Outlet />
+                  </div>
+                </ChatProvider>
+              </MarketProvider>
+            </PredictionProvider>
           </NavigationProvider>
         </WalletProvider>
       </OctopusLocaleProvider>

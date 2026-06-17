@@ -6,6 +6,7 @@
 import { Suspense, lazy } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWallet } from "@/contexts/wallet-context";
+import { usePrediction } from "@/contexts/prediction-provider";
 
 const LazyBinaryPredictionStudio = lazy(() =>
   import("@/components/octopus-market/binary-prediction-studio").then((m) => ({
@@ -15,6 +16,7 @@ const LazyBinaryPredictionStudio = lazy(() =>
 
 export function PredictionMarketPage() {
   const wallet = useWallet();
+  const prediction = usePrediction();
 
   // Convert wallet context result to match component expectations
   const handleConnect = async () => {

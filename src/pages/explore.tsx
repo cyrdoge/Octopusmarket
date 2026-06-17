@@ -6,6 +6,7 @@
 import { Suspense, lazy } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWallet } from "@/contexts/wallet-context";
+import { useMarket } from "@/contexts/market-provider";
 
 const LazyCommunityAIMarket = lazy(() =>
   import("@/components/octopus-market/community-ai-market").then((m) => ({
@@ -15,6 +16,7 @@ const LazyCommunityAIMarket = lazy(() =>
 
 export function ExplorePage() {
   const wallet = useWallet();
+  const market = useMarket();
   const guestActorId = `guest-${Math.random().toString(36).slice(2, 10)}`;
 
   return (

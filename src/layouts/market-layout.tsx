@@ -10,6 +10,7 @@ import { Outlet } from "react-router-dom";
 import { useThemeMode } from "@/hooks/use-theme-mode";
 import { useWallet } from "@/contexts/wallet-context";
 import { useNavigation } from "@/contexts/navigation-context";
+import { useChat } from "@/contexts/chat-provider";
 import { MarketHeader } from "@/components/layout/market-header";
 import { MarketFooter } from "@/components/layout/market-footer";
 import { AidoLauncher } from "@/components/layout/aido-launcher";
@@ -25,6 +26,7 @@ export function MarketLayout() {
   const { isDark, toggleTheme } = useThemeMode();
   const wallet = useWallet();
   const nav = useNavigation();
+  const chat = useChat();
 
   return (
     <div className="flex min-h-screen flex-col">
