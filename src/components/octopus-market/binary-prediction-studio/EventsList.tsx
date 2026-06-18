@@ -22,7 +22,7 @@ interface BetConfirmParams {
 
 interface EventsListProps {
   events: (PredictionMarketQuestion | AdminCreatedPredictionMarket)[];
-  onConfirmBet: (params: BetConfirmParams) => void;
+  onConfirmBet: (params: BetConfirmParams) => void | Promise<void>;
   isLoading?: boolean;
 }
 

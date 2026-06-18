@@ -32,7 +32,7 @@ export interface EventCardProps {
     optionLabel: string;
     amount: number;
     potentialReturn: number;
-  }) => void;
+  }) => void | Promise<void>;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
