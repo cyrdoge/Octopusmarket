@@ -23,7 +23,7 @@ export interface EventCardProps {
   /** Required when mode === "vs": the two competing sides */
   homeTeam?: { name: string; emoji?: string; imageSrc?: string };
   awayTeam?: { name: string; emoji?: string; imageSrc?: string };
-  /** For simple mode: single image */
+  /** Single image for "simple" mode */
   singleImageSrc?: string;
   options: PredictionMarketOption[];
   onConfirmBet: (params: {
@@ -32,7 +32,7 @@ export interface EventCardProps {
     optionLabel: string;
     amount: number;
     potentialReturn: number;
-  }) => void | Promise<void>;
+  }) => void;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -45,40 +45,36 @@ function VsHeader({
   awayTeam: EventCardProps["awayTeam"];
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center justify-between gap-3">
       {/* Home */}
-      <div className="flex flex-1 flex-col items-center gap-1">
-        {homeTeam?.imageSrc ? (
-          <img
-            src={homeTeam.imageSrc}
-            alt={homeTeam.name}
-            className="h-10 w-10 rounded-full object-cover border border-border"
-          />
-        ) : (
-          <div className="h-10 w-10 rounded-full border border-border bg-muted" />
-        )}
-        <span className="text-center text-xs font-medium text-foreground line-clamp-1">
+      <div className="flex flex-1 flex-col items-center gap-1.5">
+        <div className="flex h-14 w-14 items-center justify-center rounded-lg border-2 border-orange-500/30 bg-orange-500/10 text-2xl font-bold overflow-hidden">
+          {homeTeam?.imageSrc ? (
+            <img src={homeTeam.imageSrc} alt={homeTeam.name} className="h-full w-full object-cover" />
+          ) : (
+            homeTeam?.emoji ?? "🏠"
+          )}
+        </div>
+        <span className="line-clamp-2 text-center text-xs font-semibold text-foreground">
           {homeTeam?.name ?? "Home"}
         </span>
       </div>
 
       {/* VS badge */}
-      <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-medium text-muted-foreground flex-shrink-0">
+      <span className="shrink-0 rounded-lg border border-orange-500/40 bg-orange-500/15 px-2 py-1 text-[10px] font-bold text-orange-500">
         VS
       </span>
 
       {/* Away */}
-      <div className="flex flex-1 flex-col items-center gap-1">
-        {awayTeam?.imageSrc ? (
-          <img
-            src={awayTeam.imageSrc}
-            alt={awayTeam.name}
-            className="h-10 w-10 rounded-full object-cover border border-border"
-          />
-        ) : (
-          <div className="h-10 w-10 rounded-full border border-border bg-muted" />
-        )}
-        <span className="text-center text-xs font-medium text-foreground line-clamp-1">
+      <div className="flex flex-1 flex-col items-center gap-1.5">
+        <div className="flex h-14 w-14 items-center justify-center rounded-lg border-2 border-orange-500/30 bg-orange-500/10 text-2xl font-bold overflow-hidden">
+          {awayTeam?.imageSrc ? (
+            <img src={awayTeam.imageSrc} alt={awayTeam.name} className="h-full w-full object-cover" />
+          ) : (
+            awayTeam?.emoji ?? "✈️"
+          )}
+        </div>
+        <span className="line-clamp-2 text-center text-xs font-semibold text-foreground">
           {awayTeam?.name ?? "Away"}
         </span>
       </div>
@@ -89,31 +85,28 @@ function VsHeader({
 function SimpleHeader({
   title,
   categoryLabel,
-  imageSrc,
+  singleImageSrc,
 }: {
   title: string;
   categoryLabel?: string;
-  imageSrc?: string;
+  singleImageSrc?: string;
 }) {
   return (
-    <div className="flex gap-2">
-      {imageSrc && (
-        <img
-          src={imageSrc}
-          alt={title}
-          className="h-12 w-12 rounded-md object-cover flex-shrink-0 border border-border"
-        />
+    // min-h forces all cards to reserve the same header height regardless of title length
+    <div className="min-h-[52px] space-y-2">
+      {singleImageSrc && (
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-orange-500/20 bg-orange-500/5 overflow-hidden">
+          <img src={singleImageSrc} alt={title} className="h-full w-full object-cover" />
+        </div>
       )}
-      <div className="flex-1 min-w-0">
-        {categoryLabel && (
-          <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-            {categoryLabel}
-          </p>
-        )}
-        <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-          {title}
+      {categoryLabel && (
+        <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+          {categoryLabel}
         </p>
-      </div>
+      )}
+      <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+        {title}
+      </p>
     </div>
   );
 }
@@ -153,24 +146,27 @@ export const EventCard = memo(function EventCard({
   }, [id, selectedOption, amount, potentialReturn, onConfirmBet]);
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 transition-colors hover:border-orange-500">
+    // Removed min-h-96 — card height is now driven by content, keeping all sections aligned
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card/50 p-3 transition-colors hover:border-orange-500 hover:bg-card/70">
 
       {/* ── Header ── */}
       {mode === "vs" ? (
-        <>
+        // min-h accounts for categoryLabel line + VsHeader so vs-mode cards stay aligned too
+        <div className="min-h-[52px]">
           {categoryLabel && (
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
               {categoryLabel}
             </p>
           )}
           <VsHeader homeTeam={homeTeam} awayTeam={awayTeam} />
-        </>
+        </div>
       ) : (
-        <SimpleHeader title={title} categoryLabel={categoryLabel} imageSrc={singleImageSrc} />
+        <SimpleHeader title={title} categoryLabel={categoryLabel} singleImageSrc={singleImageSrc} />
       )}
 
       {/* ── Options ── */}
-      <div className="flex flex-wrap gap-1.5">
+      {/* min-h ensures option buttons zone never collapses when there's only 1 option */}
+      <div className="flex min-h-[56px] flex-wrap gap-1">
         {options.map((option) => {
           const isSelected = option.id === selectedOptionId;
           return (
@@ -180,18 +176,11 @@ export const EventCard = memo(function EventCard({
               className={[
                 "flex flex-1 flex-col items-center rounded-lg border px-2 py-2 transition-all",
                 isSelected
-                  ? "border-orange-500 bg-orange-500/5"
-                  : "border-border bg-background/50 hover:border-orange-400",
+                  ? "border-orange-500 bg-orange-500/10"
+                  : "border-border bg-muted hover:border-orange-400",
               ].join(" ")}
             >
-              {option.logoSrc && (
-                <img
-                  src={option.logoSrc}
-                  alt={option.label}
-                  className="h-5 w-5 rounded-full object-cover mb-1"
-                />
-              )}
-              <span className="text-[11px] text-muted-foreground">
+              <span className="line-clamp-2 text-center text-[11px] text-muted-foreground">
                 {option.label}
               </span>
               <span className="mt-0.5 text-base font-medium text-orange-500">
@@ -203,9 +192,9 @@ export const EventCard = memo(function EventCard({
       </div>
 
       {/* ── Bet simulator ── */}
-      <div className="flex flex-col gap-2 rounded-lg bg-background/40 p-2.5">
+      <div className="flex flex-col gap-2 rounded-lg bg-muted/10 p-2.5">
         {/* Amount input */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1.5">
           <span className="text-xs text-muted-foreground">Mon pari</span>
           <div className="flex items-center gap-1">
             <input
@@ -214,21 +203,21 @@ export const EventCard = memo(function EventCard({
               step="1"
               value={betAmount}
               onChange={(e) => setBetAmount(e.target.value)}
-              className="w-20 rounded-md border border-border bg-background px-2 py-1 text-right text-xs font-medium text-foreground focus:border-orange-500 focus:outline-none"
+              className="w-24 rounded-md border border-border bg-background px-2 py-1 text-right text-sm font-medium text-foreground focus:border-orange-500 focus:outline-none"
             />
             <span className="text-xs text-muted-foreground">USDC</span>
           </div>
         </div>
 
         {/* Gain display */}
-        <div className="flex items-center justify-between border-t border-border/30 pt-2">
+        <div className="flex items-center justify-between border-t border-border pt-2">
           <div>
             <p className="text-xs text-muted-foreground">Gain potentiel</p>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               +{formatCurrency(profit)} de profit
             </p>
           </div>
-          <p className="text-lg font-medium text-green-500">
+          <p className="text-xl font-medium text-green-500">
             {formatCurrency(potentialReturn)}
           </p>
         </div>
@@ -238,9 +227,9 @@ export const EventCard = memo(function EventCard({
       <button
         onClick={handleConfirm}
         disabled={amount <= 0 || !selectedOption}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-orange-500 py-2 text-xs font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-orange-500 py-2.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
       >
-        <TrendingUp size={14} />
+        <TrendingUp size={15} />
         Confirmer le pari
       </button>
     </div>

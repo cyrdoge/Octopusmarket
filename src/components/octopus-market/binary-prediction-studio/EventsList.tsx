@@ -22,7 +22,7 @@ interface BetConfirmParams {
 
 interface EventsListProps {
   events: (PredictionMarketQuestion | AdminCreatedPredictionMarket)[];
-  onConfirmBet: (params: BetConfirmParams) => void | Promise<void>;
+  onConfirmBet: (params: BetConfirmParams) => void;
   isLoading?: boolean;
 }
 
@@ -39,30 +39,30 @@ function toEventCardProps(
   const isAdminMarket = "mode" in event;
   const mode = isAdminMarket ? (event as any).mode ?? "simple" : "simple";
 
-  // Get visual metadata
-  const visualType = (event as any).visualType ?? "simple";
-  const leftImage = (event as any).leftCompetitorImageSrc;
-  const rightImage = (event as any).rightCompetitorImageSrc;
-  const singleImage = (event as any).singleImageSrc;
-
   // VS mode: extract home/away from first two options with images
   const homeTeam =
-    (visualType === "vs" || mode === "vs") && event.options?.[0]
-      ? { name: event.options[0].label, imageSrc: leftImage }
+    mode === "vs" && event.options?.[0]
+      ? {
+          name: event.options[0].label,
+          imageSrc: (event as any).leftCompetitorImageSrc,
+        }
       : undefined;
   const awayTeam =
-    (visualType === "vs" || mode === "vs") && event.options?.[1]
-      ? { name: event.options[1].label, imageSrc: rightImage }
+    mode === "vs" && event.options?.[1]
+      ? {
+          name: event.options[1].label,
+          imageSrc: (event as any).rightCompetitorImageSrc,
+        }
       : undefined;
 
   return {
     id: event.id,
     title: event.title,
     categoryLabel: (event as any).categoryId ?? (event as any).resolutionLabel,
-    mode: visualType === "vs" ? "vs" : "simple",
+    mode,
     homeTeam,
     awayTeam,
-    singleImageSrc: singleImage,
+    singleImageSrc: (event as any).singleImageSrc,
     options: event.options ?? [],
   };
 }
@@ -107,7 +107,7 @@ export const EventsList = memo(function EventsList({
 
   // ── Grid ──
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {events.map((event) => {
         const cardProps = toEventCardProps(event);
         return (
