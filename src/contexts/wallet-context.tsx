@@ -1,6 +1,6 @@
 /**
  * src/contexts/wallet-context.tsx
- * Wallet context - wraps existing solana-wallet.ts functions
+ * Wallet context - wraps Solana wallet functions
  * Provides wallet state and methods to all pages/components
  */
 
@@ -26,7 +26,7 @@ export type WalletContextType = {
   isLoading: boolean;
   connect: () => Promise<{ address: string; provider: SolanaProvider } | null>;
   disconnect: () => Promise<void>;
-  refreshBalance: () => Promise<void>;
+  refreshBalance: (address?: string) => Promise<void>;
 };
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);

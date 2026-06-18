@@ -60,6 +60,7 @@ export function UserDashboardSections({
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [paymentRecords, setPaymentRecords] = useState<RegistryPaymentRecord[]>([]);
   const [betRecords, setBetRecords] = useState<RegistryBetRecord[]>([]);
+  const [aiListings, setAIListings] = useState<AIListingSubmission[]>([]);
 
   useEffect(() => {
     return subscribeToAIListings(() => {
@@ -83,6 +84,25 @@ export function UserDashboardSections({
     });
   }, []);
 
+  useEffect(() => {
+    const loadAIListings = async () => {
+      try {
+        if (!walletAddress) {
+          setAIListings([]);
+          return;
+        }
+
+        const listings = await readAIListings();
+        setAIListings(listings.filter((listing) => listing.walletAddress === walletAddress));
+      } catch (error) {
+        console.error("Failed to load AI listings:", error);
+        setAIListings([]);
+      }
+    };
+
+    void loadAIListings();
+  }, [aiRefreshIndex, walletAddress]);
+
   const predictionHistory = useMemo(() => {
     if (!walletAddress) {
       return [];
@@ -92,13 +112,6 @@ export function UserDashboardSections({
   }, [betRecords, walletAddress]);
 
   const paymentNotifications = useMemo(() => paymentRecords, [paymentRecords, adminRefreshIndex]);
-  const aiListings = useMemo<AIListingSubmission[]>(() => {
-    if (!walletAddress) {
-      return [];
-    }
-
-    return readAIListings().filter((listing) => listing.walletAddress === walletAddress);
-  }, [aiRefreshIndex, walletAddress]);
 
   const derivedHistory = useMemo(
     () =>

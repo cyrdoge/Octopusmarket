@@ -146,7 +146,7 @@ function escapeXml(value: string) {
     .replace(/'/g, "&apos;");
 }
 
-function buildOnChainMemo(paymentRequest: Pick<PaymentRequest, "id" | "kind" | "reference" | "walletAddress" | "recipient" | "amount" | "metadata" | "message">) {
+export function buildOnChainMemo(paymentRequest: Pick<PaymentRequest, "id" | "kind" | "reference" | "walletAddress" | "recipient" | "amount" | "metadata" | "message">) {
   const params = new URLSearchParams();
   const metadata = paymentRequest.metadata ?? {};
   params.set("v", "1");

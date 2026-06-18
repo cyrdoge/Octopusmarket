@@ -8,6 +8,7 @@
  * - PredictionProvider (prediction market state)
  * - MarketProvider (AI market state)
  * - ChatProvider (Aido chat state)
+ * - ToastProvider (toast notifications)
  * - Outlet for child routes
  */
 
@@ -19,6 +20,7 @@ import { NavigationProvider } from "@/contexts/navigation-context";
 import { PredictionProvider } from "@/contexts/prediction-provider";
 import { MarketProvider } from "@/contexts/market-provider";
 import { ChatProvider } from "@/contexts/chat-provider";
+import { ToastProvider } from "@/contexts/toast-context";
 
 export function RootLayout() {
   return (
@@ -29,9 +31,11 @@ export function RootLayout() {
             <PredictionProvider>
               <MarketProvider>
                 <ChatProvider>
-                  <div className="min-h-screen bg-background text-foreground">
-                    <Outlet />
-                  </div>
+                  <ToastProvider>
+                    <div className="min-h-screen bg-background text-foreground">
+                      <Outlet />
+                    </div>
+                  </ToastProvider>
                 </ChatProvider>
               </MarketProvider>
             </PredictionProvider>

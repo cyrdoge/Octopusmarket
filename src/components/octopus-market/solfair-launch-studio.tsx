@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Check,
   CheckCircle2,
@@ -48,7 +48,7 @@ import {
   type PaymentRequest,
   submitSolanaTransfer,
   validateTransfer,
-} from "@/components/octopus-market/solana-pay";
+} from "@/components/octopus-market/solana-payment";
 import {
   clawdTrustThresholdUsd,
   octopusTokensSeed,
@@ -64,6 +64,12 @@ import { ListingDialog } from "@/components/octopus-market/listing-dialog";
 import { OctopusAIListingDialog } from "@/components/octopus-market/octopus-ai-listing-dialog";
 import { SectionHeading } from "@/components/octopus-market/section-heading";
 import { calculatePercentageAmount, formatWalletAddress, getSolanaProvider } from "@/components/octopus-market/solana-wallet";
+import {
+  useLaunchTokenForm,
+  useTokenFileUpload,
+  useTokenBoard,
+  type ChartRange,
+} from "@/hooks";
 
 const launchPaymentTokenSymbol = "SOL";
 const baseLaunchFee = 5;
@@ -684,26 +690,16 @@ export function SolfairLaunchStudio({
   walletUsername,
   onConnectWallet,
 }: SolfairLaunchStudioProps) {
+  // Hook-based state management
+  const launchForm = useLaunchTokenForm();
+  const fileUpload = useTokenFileUpload();
+  const tokenBoard = useTokenBoard(readStoredOctopusTokens());
+
+  // Component-specific state
   const [activeTab, setActiveTab] = useState<StudioTab>(() =>
     typeof window === "undefined" ? "token" : getStudioTabFromHash(window.location.hash)
   );
   const [tokenWorkspaceTab, setTokenWorkspaceTab] = useState<TokenWorkspaceTab>("create");
-  const [launchOption, setLaunchOption] = useState<LaunchOption>("free");
-  const [tokenName, setTokenName] = useState("");
-  const [symbol, setSymbol] = useState("");
-  const [description, setDescription] = useState("");
-  const [mintAddress, setMintAddress] = useState("");
-  const [logoPreview, setLogoPreview] = useState<string>("");
-  const [logoName, setLogoName] = useState("");
-  const [whitepaperName, setWhitepaperName] = useState("");
-  const [projectXUrl, setProjectXUrl] = useState("");
-  const [projectTelegramUrl, setProjectTelegramUrl] = useState("");
-  const [projectDiscordUrl, setProjectDiscordUrl] = useState("");
-  const [devWallets, setDevWallets] = useState([""]);
-  const [lockWallet, setLockWallet] = useState("");
-  const [hasDiscount, setHasDiscount] = useState(false);
-  const [initialBuyEnabled, setInitialBuyEnabled] = useState(true);
-  const [initialBuyPercent, setInitialBuyPercent] = useState("1");
   const [status, setStatus] = useState<LaunchStatus>("idle");
   const [statusMessage, setStatusMessage] = useState(
     "Connect a wallet first, then fill the launch form to prepare, verify payment, and submit a token launch to Bags.fm from Octopus Market."
@@ -711,11 +707,6 @@ export function SolfairLaunchStudio({
   const [bagsRequestId, setBagsRequestId] = useState("");
   const [paymentReference, setPaymentReference] = useState("");
   const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
-  const [octopusTokens, setOctopusTokens] = useState<OctopusTokenBoardItem[]>(() => readStoredOctopusTokens());
-  const [selectedTokenId, setSelectedTokenId] = useState(() => readStoredOctopusTokens()[0]?.id ?? "clawdtrust");
-  const [isTokenDetailsOpen, setIsTokenDetailsOpen] = useState(false);
-  const [copiedContractId, setCopiedContractId] = useState<string | null>(null);
-  const [selectedChartRange, setSelectedChartRange] = useState<ChartRange>("24H");
   const [selectedTokenChartOverride, setSelectedTokenChartOverride] = useState<
     Array<{
       timestamp: number;
@@ -726,7 +717,44 @@ export function SolfairLaunchStudio({
       volume: number;
     }>
   >([]);
-  const [isChartRefreshing, setIsChartRefreshing] = useState(false);
+
+  // Destructure form and file upload hooks for easier access
+  const {
+    form: {
+      tokenName,
+      tokenSymbol: symbol,
+      tokenDescription: description,
+      mintAddress,
+      websiteUrl: projectXUrl,
+      projectTelegramUrl,
+      projectDiscordUrl,
+      devWallets,
+      lockWallet,
+      launchOption,
+      holderDiscountEnabled: hasDiscount,
+      initialBuyEnabled,
+      initialBuyPercent,
+    },
+    handleTokenNameChange,
+    handleTokenSymbolChange: handleSymbolChange,
+    handleTokenDescriptionChange,
+    handleMintAddressChange,
+    handleProjectXUrlChange,
+    handleProjectTelegramUrlChange,
+    handleProjectDiscordUrlChange,
+    handleDevWalletChange,
+    handleAddDevWallet,
+    handleRemoveDevWallet,
+    handleLockWalletChange,
+    handleLaunchOptionChange,
+    handleHolderDiscountChange: handleHasDiscountChange,
+    handleInitialBuyEnabledChange,
+    handleInitialBuyPercentChange,
+  } = launchForm;
+
+  const { files: fileState } = fileUpload;
+  const { logoPreview, logoName } = fileState;
+  const { whitepaperName } = fileState;
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -751,21 +779,21 @@ export function SolfairLaunchStudio({
     }
 
     try {
-      window.localStorage.setItem(octopusTokensStorageKey, JSON.stringify(octopusTokens));
+      window.localStorage.setItem(octopusTokensStorageKey, JSON.stringify(tokenBoard.tokens));
     } catch {
       return;
     }
-  }, [octopusTokens]);
+  }, [tokenBoard.tokens]);
 
   useEffect(() => {
-    if (!octopusTokens.some((token) => token.id === selectedTokenId)) {
-      setSelectedTokenId(octopusTokens[0]?.id ?? "clawdtrust");
+    if (!tokenBoard.tokens.some((token) => token.id === tokenBoard.selectedTokenId)) {
+      tokenBoard.handleSelectToken(tokenBoard.tokens[0]?.id ?? "clawdtrust");
     }
-  }, [octopusTokens, selectedTokenId]);
+  }, [tokenBoard.tokens, tokenBoard.selectedTokenId, tokenBoard]);
 
   const tokenRefreshKey = useMemo(
-    () => octopusTokens.map((token) => `${token.id}:${token.poolAddress}:${token.contractAddress}`).join("|"),
-    [octopusTokens]
+    () => tokenBoard.tokens.map((token) => `${token.id}:${token.poolAddress}:${token.contractAddress}`).join("|"),
+    [tokenBoard.tokens]
   );
   const tokenMetricsRefreshMs = isLegacyBrowser ? 45000 : 20000;
 
@@ -778,10 +806,10 @@ export function SolfairLaunchStudio({
 
     const refreshTokenMetrics = async () => {
       const nextSnapshots = await Promise.all(
-        octopusTokens.map(async (token) => ({
+        tokenBoard.tokens.map(async (token) => ({
           id: token.id,
           snapshot:
-            isOfficialTrackedToken(token) || token.id === selectedTokenId
+            isOfficialTrackedToken(token) || token.id === tokenBoard.selectedTokenId
               ? await fetchLiveTokenMetrics(token)
               : null,
         }))
@@ -791,27 +819,25 @@ export function SolfairLaunchStudio({
         return;
       }
 
-      setOctopusTokens((currentTokens) =>
-        currentTokens.map((token) => {
-          const nextSnapshot = nextSnapshots.find((entry) => entry.id === token.id)?.snapshot;
+      nextSnapshots.forEach((entry) => {
+        if (!entry.snapshot) return;
+        const token = tokenBoard.tokens.find((t) => t.id === entry.id);
+        if (!token) return;
 
-          if (!nextSnapshot) {
-            return token;
-          }
+        const mergedToken = { ...token, ...entry.snapshot };
+        const hasChanged =
+          mergedToken.price !== token.price ||
+          mergedToken.volume24h !== token.volume24h ||
+          mergedToken.marketCap !== token.marketCap ||
+          mergedToken.holders !== token.holders ||
+          mergedToken.status !== token.status ||
+          mergedToken.lastUpdatedLabel !== token.lastUpdatedLabel ||
+          JSON.stringify(mergedToken.chartPoints ?? []) !== JSON.stringify(token.chartPoints ?? []);
 
-          const mergedToken = { ...token, ...nextSnapshot };
-          const hasChanged =
-            mergedToken.price !== token.price ||
-            mergedToken.volume24h !== token.volume24h ||
-            mergedToken.marketCap !== token.marketCap ||
-            mergedToken.holders !== token.holders ||
-            mergedToken.status !== token.status ||
-            mergedToken.lastUpdatedLabel !== token.lastUpdatedLabel ||
-            JSON.stringify(mergedToken.chartPoints ?? []) !== JSON.stringify(token.chartPoints ?? []);
-
-          return hasChanged ? mergedToken : token;
-        })
-      );
+        if (hasChanged) {
+          tokenBoard.handleUpdateToken(entry.id, entry.snapshot);
+        }
+      });
     };
 
     void refreshTokenMetrics();
@@ -825,7 +851,7 @@ export function SolfairLaunchStudio({
       isCancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [selectedTokenId, tokenMetricsRefreshMs, tokenRefreshKey]);
+  }, [tokenBoard.selectedTokenId, tokenMetricsRefreshMs, tokenRefreshKey, tokenBoard]);
 
   const feeAmount =
     launchOption === "free" ? freeLaunchFee : hasDiscount ? discountLaunchFee : baseLaunchFee;
@@ -840,7 +866,7 @@ export function SolfairLaunchStudio({
   const normalizedTelegramUrl = normalizeLink(projectTelegramUrl);
   const normalizedDiscordUrl = normalizeLink(projectDiscordUrl);
   const normalizedInitialBuyPercent = initialBuyEnabled ? clampInitialBuyPercent(initialBuyPercent) : 0;
-  const selectedToken = octopusTokens.find((token) => token.id === selectedTokenId) ?? octopusTokens[0];
+  const selectedToken = tokenBoard.selectedToken ?? tokenBoard.tokens[0];
   const baseSelectedTokenChartData = selectedToken?.chartPoints?.length
     ? selectedToken.chartPoints
     : createFallbackChartPoints(parseFormattedUsdValue(selectedToken?.price) || 1, "24H");
@@ -1226,7 +1252,7 @@ export function SolfairLaunchStudio({
 
                           <RadioGroup
                             value={launchOption}
-                            onValueChange={(value) => setLaunchOption(value as LaunchOption)}
+                            onValueChange={(value) => handleLaunchOptionChange(value as LaunchOption)}
                             className="gap-3"
                           >
                             {launchOptions.map((option) => {
@@ -1236,7 +1262,7 @@ export function SolfairLaunchStudio({
                                 <button
                                   key={option.id}
                                   type="button"
-                                  onClick={() => setLaunchOption(option.id)}
+                                  onClick={() => handleLaunchOptionChange(option.id)}
                                   className={`w-full rounded-2xl border p-4 text-left transition ${
                                     isSelected
                                       ? "border-orange-300 bg-white shadow-sm dark:border-orange-400/40 dark:bg-orange-500/10"
@@ -1270,25 +1296,25 @@ export function SolfairLaunchStudio({
                           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">Token information</p>
                           <Input
                             value={tokenName}
-                            onChange={(event) => setTokenName(event.target.value)}
+                            onChange={(event) => handleTokenNameChange(event.target.value)}
                             placeholder="Token name"
                             className="border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                           />
                           <Input
                             value={symbol}
-                            onChange={(event) => setSymbol(event.target.value.toUpperCase())}
+                            onChange={(event) => handleSymbolChange(event.target.value)}
                             placeholder="Symbol, for example OCTO"
                             className="border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                           />
                           <Textarea
                             value={description}
-                            onChange={(event) => setDescription(event.target.value)}
+                            onChange={(event) => handleTokenDescriptionChange(event.target.value)}
                             placeholder="Project description"
                             className="min-h-28 border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                           />
                           <Input
                             value={mintAddress}
-                            onChange={(event) => setMintAddress(event.target.value)}
+                            onChange={(event) => handleMintAddressChange(event.target.value)}
                             placeholder="SPL mint address"
                             className="border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                           />
@@ -1301,19 +1327,19 @@ export function SolfairLaunchStudio({
                           </div>
                           <Input
                             value={projectXUrl}
-                            onChange={(event) => setProjectXUrl(event.target.value)}
+                            onChange={(event) => handleProjectXUrlChange(event.target.value)}
                             placeholder="Project X / Twitter link"
                             className="border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                           />
                           <Input
                             value={projectTelegramUrl}
-                            onChange={(event) => setProjectTelegramUrl(event.target.value)}
+                            onChange={(event) => handleProjectTelegramUrlChange(event.target.value)}
                             placeholder="Project Telegram link"
                             className="border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                           />
                           <Input
                             value={projectDiscordUrl}
-                            onChange={(event) => setProjectDiscordUrl(event.target.value)}
+                            onChange={(event) => handleProjectDiscordUrlChange(event.target.value)}
                             placeholder="Project Discord link"
                             className="border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                           />
@@ -1330,7 +1356,7 @@ export function SolfairLaunchStudio({
                                 Let the deployer buy between 1% and 5% of the token supply immediately after launch. Any request above 5% is refused.
                               </p>
                             </div>
-                            <Switch checked={initialBuyEnabled} onCheckedChange={setInitialBuyEnabled} />
+                            <Switch checked={initialBuyEnabled} onCheckedChange={handleInitialBuyEnabledChange} />
                           </div>
                           <div className="space-y-4">
                             <div className="grid grid-cols-5 gap-2">
@@ -1443,7 +1469,7 @@ export function SolfairLaunchStudio({
                             </div>
                             <Switch
                               checked={hasDiscount}
-                              onCheckedChange={setHasDiscount}
+                              onCheckedChange={handleHasDiscountChange}
                               disabled={launchOption === "free"}
                             />
                           </div>

@@ -6,7 +6,7 @@ import {
   trackCentralWalletActivity,
 } from "@/components/octopus-market/octopus-central-registry";
 import { syncPredictionEntriesForAdminDecision } from "@/components/octopus-market/prediction-market-store";
-import { scanIncomingTreasuryPayments } from "@/components/octopus-market/solana-pay";
+import { scanIncomingTreasuryPayments } from "@/components/octopus-market/solana-payment";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export type AdminPaymentFlow = "prediction" | "launch" | "listing";
@@ -378,7 +378,7 @@ export function upsertAdminPaymentNotification(notification: AdminPaymentNotific
 }
 
 export function createAdminPaymentNotificationFromRequest(
-  paymentRequest: import("@/components/octopus-market/solana-pay").PaymentRequest
+  paymentRequest: import("@/components/octopus-market/solana-payment").PaymentRequest
 ) {
   const metadata = paymentRequest.metadata ?? {};
   const reserveFeeUsdc = readNumberMetadataValue(metadata.reserveFee, 0);
@@ -462,7 +462,7 @@ export function createAdminPaymentNotificationFromRequest(
 }
 
 export function notifyAdminForValidatedPayment(
-  paymentRequest: import("@/components/octopus-market/solana-pay").PaymentRequest
+  paymentRequest: import("@/components/octopus-market/solana-payment").PaymentRequest
 ) {
   const notification = createAdminPaymentNotificationFromRequest(paymentRequest);
   upsertAdminPaymentNotification(notification);

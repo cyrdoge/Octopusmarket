@@ -1,148 +1,40 @@
-import type { AdminPaymentStatus } from "@/components/octopus-market/octopus-admin";
-import { syncPredictionHistoryToCentralRegistry } from "@/components/octopus-market/octopus-central-registry";
 import { buildStoredAdminAuthHeaders } from "@/components/octopus-market/octopus-admin-auth";
-import type { PredictionMarketQuestion } from "@/components/octopus-market/octopus-market-data";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { Json } from "@/lib/supabase-types";
+import type { AdminCreatedPredictionMarket, PredictionResolutionRecord } from "./types";
+import {
+  adminCreatedPredictionMarketsStorageKey,
+  predictionMarketApiBase,
+  predictionMarketSyncTimer,
+  predictionMarketEventSource,
+  predictionMarketBroadcastChannel,
+  hasStartedPredictionServerSync,
+  predictionMarketsCache,
+  predictionResolutionsCache,
+  hasHydratedPredictionCache,
+  predictionMarketServerPollMs,
+} from "./constants";
+import { safeParseArray, safeParseRecord, emitPredictionMarketStorageUpdate, serializePredictionMarketState, getPredictionMarketBroadcastChannel } from "./storage";
+import { predictionResolutionStorageKey } from "./constants";
 
-export type PredictionResultStatus =
-  | "open"
-  | "pending_review"
-  | "approved_pending_result"
-  | "win"
-  | "lose"
-  | "claimed"
-  | "rejected";
-
-export type PredictionHistoryEntry = {
-  id: string;
-  marketId: string;
-  marketTitle: string;
-  categoryLabel: string;
-  selectionId: string;
-  selectionLabel: string;
-  amount: number;
-  reserveFee: number;
-  totalCharged: number;
-  claimFeeRate: number;
-  payoutMultiple: number;
-  grossReward: number;
-  netReward: number;
-  walletAddress: string;
-  paymentReference: string;
-  paymentRequestId: string;
-  createdAt: number;
-  reportedAt: number;
-  adminDecisionStatus?: AdminPaymentStatus;
-  resolutionOutcomeId?: string;
-  resolvedAt?: number;
-  resolvedByWallet?: string;
-  resultStatus?: PredictionResultStatus;
-  winningChoiceLabel?: string;
-  payoutRecordedAt?: number;
-  claimedAt?: number;
-  claimReference?: string;
-};
-
-export type PredictionResolutionRecord = {
-  outcomeId: string;
-  resolvedAt: number;
-  resolvedByWallet: string;
-};
-
-export type AdminCreatedPredictionMarket = PredictionMarketQuestion & {
-  createdAt: number;
-  createdByWallet: string;
-  isAdminCreated: true;
-};
-
-const predictionHistoryStorageKey = "octopus-market-prediction-history-v4";
-const predictionResolutionStorageKey = "octopus-market-prediction-resolutions-v3";
-const adminCreatedPredictionMarketsStorageKey = "octopus-market-admin-created-markets-v2";
-const predictionMarketStorageEventName = "octopus-market-prediction-storage";
-const predictionMarketChannelName = "octopus-market-prediction-channel";
-const predictionMarketApiBase = "/api/prediction-markets";
-
-let predictionMarketBroadcastChannel: BroadcastChannel | null = null;
-let predictionMarketEventSource: EventSource | null = null;
-let predictionMarketSyncTimer: number | null = null;
-let hasStartedPredictionServerSync = false;
-let predictionMarketsCache: AdminCreatedPredictionMarket[] = [];
-let predictionResolutionsCache: Record<string, PredictionResolutionRecord> = {};
-let hasHydratedPredictionCache = false;
-const predictionMarketServerPollMs = 1000;
-
-function shouldAttemptPredictionMarketServerSync() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  if (import.meta.env.VITE_ENABLE_SERVER_SYNC === "false") {
-    return false;
-  }
-
-  return true;
-}
-
-function getPredictionMarketBroadcastChannel() {
-  if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") {
-    return null;
-  }
-
-  if (!predictionMarketBroadcastChannel) {
-    predictionMarketBroadcastChannel = new BroadcastChannel(predictionMarketChannelName);
-  }
-
-  return predictionMarketBroadcastChannel;
-}
-
-function emitPredictionMarketStorageUpdate(_source: "local" | "server" = "local") {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.dispatchEvent(new CustomEvent(predictionMarketStorageEventName));
-  getPredictionMarketBroadcastChannel()?.postMessage({ type: "prediction-market-update" });
-}
-
-function safeParseArray<T>(rawValue: string | null): T[] {
-  if (!rawValue) {
-    return [];
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue) as T[];
-    return Array.isArray(parsedValue) ? parsedValue : [];
-  } catch {
-    return [];
-  }
-}
-
-function safeParseRecord<T extends Record<string, unknown>>(rawValue: string | null) {
-  if (!rawValue) {
-    return {} as T;
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue) as T;
-    return parsedValue && typeof parsedValue === "object" ? parsedValue : ({} as T);
-  } catch {
-    return {} as T;
-  }
-}
+// Local state to prevent re-subscribing to Supabase
+let supabaseChannelSubscribed = false;
 
 function hydratePredictionMarketCache(force = false) {
   if (typeof window === "undefined" || (hasHydratedPredictionCache && !force)) {
     return;
   }
 
-  predictionMarketsCache = safeParseArray<AdminCreatedPredictionMarket>(
+  const marketsRaw = safeParseArray<AdminCreatedPredictionMarket>(
     window.localStorage.getItem(adminCreatedPredictionMarketsStorageKey)
   );
-  predictionResolutionsCache = safeParseRecord<Record<string, PredictionResolutionRecord>>(
+  const resolutionsRaw = safeParseRecord<Record<string, PredictionResolutionRecord>>(
     window.localStorage.getItem(predictionResolutionStorageKey)
   );
-  hasHydratedPredictionCache = true;
+
+  predictionMarketsCache.push(...marketsRaw);
+  Object.assign(predictionResolutionsCache, resolutionsRaw);
+  Object.assign(hasHydratedPredictionCache, true);
 }
 
 function refreshPredictionMarketCache() {
@@ -170,20 +62,11 @@ function refreshPredictionMarketCache() {
     return false;
   }
 
-  predictionMarketsCache = nextMarkets;
-  predictionResolutionsCache = nextResolutions;
+  predictionMarketsCache.length = 0;
+  predictionMarketsCache.push(...nextMarkets);
+  Object.keys(predictionResolutionsCache).forEach((key) => delete predictionResolutionsCache[key]);
+  Object.assign(predictionResolutionsCache, nextResolutions);
   return true;
-}
-
-function serializePredictionMarketState(payload: {
-  markets: AdminCreatedPredictionMarket[];
-  resolutions: Record<string, PredictionResolutionRecord>;
-}) {
-  try {
-    return JSON.stringify(payload);
-  } catch {
-    return "";
-  }
 }
 
 function persistPredictionMarketCache() {
@@ -221,21 +104,34 @@ function replacePredictionMarketState(
   });
 
   if (currentSerializedState === nextSerializedState) {
-    hasHydratedPredictionCache = true;
+    hasHydratedPredictionCache;
     return;
   }
 
-  predictionMarketsCache = nextMarkets;
-  predictionResolutionsCache = nextResolutions;
+  predictionMarketsCache.length = 0;
+  predictionMarketsCache.push(...nextMarkets);
+  Object.keys(predictionResolutionsCache).forEach((key) => delete predictionResolutionsCache[key]);
+  Object.assign(predictionResolutionsCache, nextResolutions);
 
-  hasHydratedPredictionCache = true;
   persistPredictionMarketCache();
   emitPredictionMarketStorageUpdate(source);
 }
 
+function shouldAttemptPredictionMarketServerSync() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (import.meta.env.VITE_ENABLE_SERVER_SYNC === "false") {
+    return false;
+  }
+
+  return true;
+}
+
 async function fetchPredictionMarketStateFromServer() {
   if (typeof window === "undefined" || !shouldAttemptPredictionMarketServerSync()) {
-    hasStartedPredictionServerSync = true;
+    hasStartedPredictionServerSync;
     return;
   }
 
@@ -306,19 +202,18 @@ async function fetchPredictionMarketStateFromServer() {
 }
 
 function startPredictionMarketServerSync() {
-  if (typeof window === "undefined" || hasStartedPredictionServerSync) {
+  if (typeof window === "undefined") {
     return;
   }
 
   if (!shouldAttemptPredictionMarketServerSync()) {
-    hasStartedPredictionServerSync = true;
     return;
   }
 
-  hasStartedPredictionServerSync = true;
   void fetchPredictionMarketStateFromServer();
 
-  if (isSupabaseConfigured()) {
+  if (isSupabaseConfigured() && !supabaseChannelSubscribed) {
+    supabaseChannelSubscribed = true;
     supabase
       .channel("prediction-markets-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "prediction_markets" }, () => {
@@ -328,40 +223,6 @@ function startPredictionMarketServerSync() {
         void fetchPredictionMarketStateFromServer();
       })
       .subscribe();
-    return;
-  }
-
-  if (predictionMarketSyncTimer === null) {
-    predictionMarketSyncTimer = window.setInterval(() => {
-      void fetchPredictionMarketStateFromServer();
-    }, predictionMarketServerPollMs);
-  }
-
-  if (typeof EventSource === "undefined") {
-    return;
-  }
-
-  try {
-    predictionMarketEventSource = new EventSource(`${predictionMarketApiBase}/stream`);
-    predictionMarketEventSource.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data) as {
-          markets?: AdminCreatedPredictionMarket[];
-          resolutions?: Record<string, PredictionResolutionRecord>;
-        };
-        replacePredictionMarketState(payload, "server");
-      } catch {
-        return;
-      }
-    };
-
-    predictionMarketEventSource.onerror = () => {
-      predictionMarketEventSource?.close();
-      predictionMarketEventSource = null;
-      hasStartedPredictionServerSync = true;
-    };
-  } catch {
-    hasStartedPredictionServerSync = false;
   }
 }
 
@@ -483,140 +344,8 @@ async function postPredictionMarketStateToServer(adminWalletAddress?: string | n
   }
 }
 
-function schedulePredictionMarketServerPersist(adminWalletAddress?: string | null) {
-  void postPredictionMarketStateToServer(adminWalletAddress);
-}
-
-export async function persistPredictionMarketStateToServer(adminWalletAddress?: string | null) {
+export function persistPredictionMarketStateToServer(adminWalletAddress?: string | null) {
   return postPredictionMarketStateToServer(adminWalletAddress);
-}
-
-function resolvePredictionEntryStatus(entry: PredictionHistoryEntry): PredictionResultStatus {
-  if (entry.claimedAt) {
-    return "claimed";
-  }
-
-  if (entry.adminDecisionStatus === "rejected") {
-    return "rejected";
-  }
-
-  if (entry.adminDecisionStatus !== "approved") {
-    return "pending_review";
-  }
-
-  if (!entry.resolutionOutcomeId) {
-    return "approved_pending_result";
-  }
-
-  return entry.resolutionOutcomeId === entry.selectionId ? "win" : "lose";
-}
-
-function decoratePredictionEntry(entry: PredictionHistoryEntry): PredictionHistoryEntry {
-  const resultStatus = resolvePredictionEntryStatus(entry);
-  const isWinningEntry = resultStatus === "win" || resultStatus === "claimed";
-
-  return {
-    ...entry,
-    adminDecisionStatus: entry.adminDecisionStatus ?? "pending",
-    resultStatus,
-    winningChoiceLabel: isWinningEntry ? entry.selectionLabel : undefined,
-    payoutRecordedAt: isWinningEntry ? entry.payoutRecordedAt ?? entry.claimedAt ?? entry.resolvedAt : undefined,
-  };
-}
-
-export function readPredictionHistory() {
-  if (typeof window === "undefined") {
-    return [] as PredictionHistoryEntry[];
-  }
-
-  return safeParseArray<PredictionHistoryEntry>(window.localStorage.getItem(predictionHistoryStorageKey)).map(
-    decoratePredictionEntry
-  );
-}
-
-export function writePredictionHistory(history: PredictionHistoryEntry[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    const normalizedHistory = history.map(decoratePredictionEntry);
-    window.localStorage.setItem(predictionHistoryStorageKey, JSON.stringify(normalizedHistory));
-    emitPredictionMarketStorageUpdate();
-    normalizedHistory.forEach((entry) => {
-      void syncPredictionHistoryToCentralRegistry(entry);
-    });
-  } catch {
-    return;
-  }
-}
-
-export function appendPredictionHistoryEntry(entry: PredictionHistoryEntry) {
-  const currentHistory = readPredictionHistory();
-
-  if (currentHistory.some((currentEntry) => currentEntry.paymentReference === entry.paymentReference)) {
-    return currentHistory;
-  }
-
-  const nextHistory = [entry, ...currentHistory].slice(0, 400);
-  writePredictionHistory(nextHistory);
-  void syncPredictionHistoryToCentralRegistry(entry);
-  return nextHistory;
-}
-
-export function updatePredictionHistoryEntry(
-  entryId: string,
-  updater: (entry: PredictionHistoryEntry) => PredictionHistoryEntry
-) {
-  const nextHistory = updatePredictionHistoryEntryByFilter((entry) => entry.id === entryId, updater);
-  const updatedEntry = nextHistory.find((entry) => entry.id === entryId);
-
-  if (updatedEntry) {
-    void syncPredictionHistoryToCentralRegistry(updatedEntry);
-  }
-
-  return nextHistory;
-}
-
-export function syncPredictionEntriesForAdminDecision(paymentReference: string, status: AdminPaymentStatus) {
-  if (!paymentReference) {
-    return readPredictionHistory();
-  }
-
-  return updatePredictionHistoryEntryByFilter(
-    (entry) => entry.paymentReference === paymentReference,
-    (entry) => ({
-      ...entry,
-      adminDecisionStatus: status,
-    })
-  );
-}
-
-export function syncPredictionEntriesForResolvedMarket(params: PredictionResolutionRecord & { marketId: string }) {
-  if (!params.marketId) {
-    return readPredictionHistory();
-  }
-
-  return updatePredictionHistoryEntryByFilter(
-    (entry) => entry.marketId === params.marketId,
-    (entry) => ({
-      ...entry,
-      resolutionOutcomeId: params.outcomeId,
-      resolvedAt: params.resolvedAt,
-      resolvedByWallet: params.resolvedByWallet,
-      payoutRecordedAt: params.outcomeId === entry.selectionId ? params.resolvedAt : entry.payoutRecordedAt,
-    })
-  );
-}
-
-function updatePredictionHistoryEntryByFilter(
-  matcher: (entry: PredictionHistoryEntry) => boolean,
-  updater: (entry: PredictionHistoryEntry) => PredictionHistoryEntry
-) {
-  const currentHistory = readPredictionHistory();
-  const nextHistory = currentHistory.map((entry) => (matcher(entry) ? updater(entry) : entry));
-  writePredictionHistory(nextHistory);
-  return nextHistory;
 }
 
 export function readPredictionResolutions() {
@@ -635,14 +364,14 @@ export function writePredictionResolutions(
   }
 
   replacePredictionMarketState({ resolutions }, "local");
-  schedulePredictionMarketServerPersist(adminWalletAddress);
+  void postPredictionMarketStateToServer(adminWalletAddress);
 }
 
 export function readAdminCreatedPredictionMarkets() {
   hydratePredictionMarketCache();
   refreshPredictionMarketCache();
   startPredictionMarketServerSync();
-  return predictionMarketsCache;
+  return [...predictionMarketsCache];
 }
 
 export function writeAdminCreatedPredictionMarkets(
@@ -654,7 +383,7 @@ export function writeAdminCreatedPredictionMarkets(
   }
 
   replacePredictionMarketState({ markets }, "local");
-  schedulePredictionMarketServerPersist(adminWalletAddress);
+  void postPredictionMarketStateToServer(adminWalletAddress);
 }
 
 export function appendAdminCreatedPredictionMarket(
@@ -669,6 +398,34 @@ export function appendAdminCreatedPredictionMarket(
 
   const nextMarkets = [market, ...currentMarkets].slice(0, 100);
   writeAdminCreatedPredictionMarkets(nextMarkets, adminWalletAddress ?? market.createdByWallet);
+  return nextMarkets;
+}
+
+export function updateAdminCreatedPredictionMarket(
+  marketId: string,
+  updater: (market: AdminCreatedPredictionMarket) => AdminCreatedPredictionMarket,
+  adminWalletAddress?: string | null
+) {
+  if (!marketId) {
+    return readAdminCreatedPredictionMarkets();
+  }
+
+  const currentMarkets = readAdminCreatedPredictionMarkets();
+  let didUpdate = false;
+
+  const nextMarkets = currentMarkets.map((market) => {
+    if (market.id !== marketId) {
+      return market;
+    }
+    didUpdate = true;
+    return updater(market);
+  });
+
+  if (!didUpdate) {
+    return currentMarkets;
+  }
+
+  writeAdminCreatedPredictionMarkets(nextMarkets, adminWalletAddress);
   return nextMarkets;
 }
 
@@ -716,7 +473,7 @@ export function subscribeToPredictionMarketStorage(listener: () => void) {
 
   const channel = getPredictionMarketBroadcastChannel();
 
-  window.addEventListener(predictionMarketStorageEventName, handleStorageChange);
+  window.addEventListener("octopus-market-prediction-storage", handleStorageChange);
   window.addEventListener("storage", handleStorageChange);
   window.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -725,7 +482,7 @@ export function subscribeToPredictionMarketStorage(listener: () => void) {
   }
 
   return () => {
-    window.removeEventListener(predictionMarketStorageEventName, handleStorageChange);
+    window.removeEventListener("octopus-market-prediction-storage", handleStorageChange);
     window.removeEventListener("storage", handleStorageChange);
     window.removeEventListener("visibilitychange", handleVisibilityChange);
 

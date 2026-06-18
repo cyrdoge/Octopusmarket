@@ -21,8 +21,6 @@ export function DashboardLayout() {
       <MarketHeader
         isWalletConnected={wallet.isConnected}
         walletLabel={wallet.walletDisplayLabel}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
         onConnectWallet={wallet.connect}
         onOpenMobileMenu={() => nav.openOverlay("mobile-menu")}
       />
@@ -35,10 +33,7 @@ export function DashboardLayout() {
       </main>
 
       {/* Footer */}
-      <MarketFooter
-        onListMyAI={() => nav.navigateToPath("/list-my-ai")}
-        onBrowseMarkets={() => nav.navigateToPath("/explore")}
-      />
+      <MarketFooter />
     </div>
   );
 }

@@ -6,9 +6,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useWallet } from "@/contexts/wallet-context";
+import { useToast } from "@/contexts/toast-context";
 import {
   predictionMarketCategories,
   predictionMarketQuestions,
+  predictionMarketFeeRate,
+  predictionMarketReserveFeeRate,
+  predictionMarketTreasuryAddress,
+  predictionMarketMinBetAmount,
+  predictionMarketMaxBetAmount,
+  solanaUsdcMintAddress,
   type PredictionMarketQuestion,
 } from "@/components/octopus-market/octopus-market-data";
 import {
@@ -18,21 +25,45 @@ import {
   type AdminCreatedPredictionMarket,
   type PredictionHistoryEntry,
 } from "@/components/octopus-market/prediction-market-store";
-import { EventsList } from "@/components/octopus-market/binary-prediction-studio/index";
+import { EventsList } from "@/components/octopus-market/binary-prediction-studio/EventsList";
 
 export function PredictionsPage() {
   const wallet = useWallet();
+  const toast = useToast();
   const [activeCategoryId, setActiveCategoryId] = useState(predictionMarketCategories[0]?.id ?? "crypto");
-  const [adminCreatedMarkets, setAdminCreatedMarkets] = useState<AdminCreatedPredictionMarket[]>(() =>
-    readAdminCreatedPredictionMarkets()
-  );
-  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [adminCreatedMarkets, setAdminCreatedMarkets] = useState<AdminCreatedPredictionMarket[]>([]);
+  const [isLoadingMarkets, setIsLoadingMarkets] = useState(true);
 
-  // Subscribe to storage updates
+  // Load admin-created markets from Supabase on mount
   useEffect(() => {
-    return subscribeToPredictionMarketStorage(() => {
-      setAdminCreatedMarkets(readAdminCreatedPredictionMarkets());
+    const loadMarkets = async () => {
+      setIsLoadingMarkets(true);
+      try {
+        const markets = await readAdminCreatedPredictionMarkets();
+        setAdminCreatedMarkets(markets);
+      } catch (error) {
+        console.error("Failed to load markets:", error);
+        toast.error("Failed to load prediction markets");
+      } finally {
+        setIsLoadingMarkets(false);
+      }
+    };
+
+    loadMarkets();
+  }, [toast]);
+
+  // Subscribe to Supabase realtime updates
+  useEffect(() => {
+    const unsubscribe = subscribeToPredictionMarketStorage(async () => {
+      try {
+        const updated = await readAdminCreatedPredictionMarkets();
+        setAdminCreatedMarkets(updated);
+      } catch (error) {
+        console.error("Failed to refresh markets:", error);
+      }
     });
+
+    return unsubscribe;
   }, []);
 
   // Combine default questions with admin-created markets
@@ -43,11 +74,9 @@ export function PredictionsPage() {
   // Filter by category
   const questions = useMemo(() => {
     return allQuestions.filter((q) => {
-      // For admin created markets, categoryId is a direct property
       if ("categoryId" in q && typeof q.categoryId === "string") {
         return q.categoryId === activeCategoryId;
       }
-      // For default questions, they should have categoryId
       return (q as any).categoryId === activeCategoryId;
     });
   }, [allQuestions, activeCategoryId]);
@@ -61,49 +90,107 @@ export function PredictionsPage() {
       potentialReturn: number;
     }) => {
       try {
-        // Step 1: Check if wallet is connected
-        if (!wallet.isConnected || !wallet.walletAddress) {
-          setNotification({
-            type: "error",
-            message: "Connecting wallet...",
-          });
+        // Step 1: Check if wallet is connected and get address
+        let walletAddress = wallet.walletAddress;
+        if (!wallet.isConnected || !walletAddress) {
+          toast.info("Connecting wallet...");
 
-          // Attempt to connect wallet
           const result = await wallet.connect();
           if (!result || !result.address) {
-            setNotification({
-              type: "error",
-              message: "Wallet connection cancelled. Please connect your wallet to place bets.",
-            });
-            setTimeout(() => setNotification(null), 5000);
+            toast.error("Wallet connection cancelled. Please connect your wallet to place bets.");
             return;
           }
+          walletAddress = result.address;
+          await wallet.refreshBalance(walletAddress);
         }
 
         // Step 2: Verify amount is valid
-        if (params.amount < 2 || params.amount > 50) {
-          setNotification({
-            type: "error",
-            message: "Bet amount must be between $2 and $50 USDC",
-          });
-          setTimeout(() => setNotification(null), 5000);
+        if (params.amount < predictionMarketMinBetAmount || params.amount > predictionMarketMaxBetAmount) {
+          toast.error(`Bet amount must be between $${predictionMarketMinBetAmount} and $${predictionMarketMaxBetAmount} USDC`);
           return;
         }
 
-        // Step 3: Find the event
+        // Step 3: Check wallet balance
+        if (!wallet.balanceSnapshot) {
+          toast.info("Checking balance...");
+          await wallet.refreshBalance(walletAddress);
+        }
+
+        const reserveFee = params.amount * predictionMarketReserveFeeRate;
+        const totalChargeUsd = params.amount + reserveFee;
+
+        if (!wallet.balanceSnapshot || wallet.balanceSnapshot.usdcBalance < totalChargeUsd) {
+          const availableBalance = wallet.balanceSnapshot?.usdcBalance ?? 0;
+          toast.error(`Insufficient balance. Required: $${totalChargeUsd.toFixed(2)} USDC, Available: $${availableBalance.toFixed(2)} USDC`);
+          return;
+        }
+
+        // Step 4: Find the event
         const event = allQuestions.find((q) => q.id === params.eventId);
         if (!event) {
           throw new Error("Event not found");
         }
 
-        // Step 4: Show processing notification
-        setNotification({
-          type: "success",
-          message: `Processing payment of $${params.amount} USDC...`,
+        // Step 5: Calculate fees
+        const claimFeeRate = predictionMarketFeeRate / 100;
+        const netReward = params.potentialReturn * (1 - claimFeeRate);
+
+        // Step 6: Load payment module
+        toast.info(`Processing payment of $${params.amount} USDC...`);
+
+        const paymentModule = await import("@/components/octopus-market/solana-payment");
+
+        // Step 7: Build transaction
+        const transferRequest = await paymentModule.buildTransaction({
+          kind: "prediction",
+          recipient: predictionMarketTreasuryAddress,
+          amount: totalChargeUsd,
+          walletAddress,
+          currency: "USDC",
+          tokenMint: solanaUsdcMintAddress,
+          tokenDecimals: 6,
+          label: "Octopus Market prediction",
+          message: `${event.title} · ${params.optionLabel}`,
+          memo: `Prediction market bet`,
+          metadata: {
+            marketId: params.eventId,
+            marketTitle: event.title,
+            selectionId: params.optionId,
+            selectionLabel: params.optionLabel,
+            stake: params.amount,
+            reserveFee,
+            totalChargeUsd,
+            payoutMultiple: event.options?.find(o => o.id === params.optionId)?.oddsMultiplier ?? 1,
+            grossReward: params.potentialReturn,
+            netReward,
+            claimFeeRate: predictionMarketFeeRate,
+          },
         });
 
-        // Step 5: Create prediction history entry
-        // NOTE: In production, this should only be saved AFTER payment confirmation
+        // Step 8: Submit transaction to wallet (Phantom popup)
+        toast.info(`Opening wallet for payment confirmation...`);
+
+        await paymentModule.submitSolanaTransfer(transferRequest);
+
+        // Step 9: Wait for blockchain confirmation
+        toast.info(`Waiting for blockchain confirmation...`);
+
+        const foundReference = await paymentModule.findReference(transferRequest.reference);
+        if (!foundReference?.signature) {
+          throw new Error("Payment not confirmed on blockchain");
+        }
+
+        // Step 10: Validate transfer on-chain
+        await paymentModule.validateTransfer(foundReference.signature, {
+          recipient: predictionMarketTreasuryAddress,
+          amount: totalChargeUsd,
+          reference: transferRequest.reference,
+          currency: "USDC",
+          tokenMint: solanaUsdcMintAddress,
+          tokenDecimals: 6,
+        });
+
+        // Step 11: Create and save prediction history entry
         const entry: PredictionHistoryEntry = {
           id: `bet_${Date.now()}_${Math.random().toString(36).slice(2)}`,
           marketId: params.eventId,
@@ -112,15 +199,15 @@ export function PredictionsPage() {
           selectionId: params.optionId,
           selectionLabel: params.optionLabel,
           amount: params.amount,
-          reserveFee: params.amount * 0.01, // 1% reserve fee
-          totalCharged: params.amount * 1.01,
-          claimFeeRate: 0.05, // 5% claim fee
-          payoutMultiple: (event.options?.find((o) => o.id === params.optionId)?.oddsMultiplier ?? 1),
+          reserveFee,
+          totalCharged: totalChargeUsd,
+          claimFeeRate: predictionMarketFeeRate,
+          payoutMultiple: event.options?.find((o) => o.id === params.optionId)?.oddsMultiplier ?? 1,
           grossReward: params.potentialReturn,
-          netReward: params.potentialReturn * 0.95, // After 5% claim fee
-          walletAddress: wallet.walletAddress!,
-          paymentReference: `pay_${Date.now()}`,
-          paymentRequestId: `payreq_${Date.now()}`,
+          netReward,
+          walletAddress,
+          paymentReference: transferRequest.reference,
+          paymentRequestId: transferRequest.id,
           createdAt: Date.now(),
           reportedAt: Date.now(),
           resolutionOutcomeId: undefined,
@@ -131,33 +218,40 @@ export function PredictionsPage() {
           payoutRecordedAt: undefined,
         };
 
-        // TODO: Implement Solana payment flow
-        // 1. Call loadPaymentModule() to get payment module
-        // 2. Initiate USDC payment request
-        // 3. Wait for payment confirmation from blockchain
-        // 4. Only after payment confirmed: save to database via persistPredictionMarketStateToServer()
-
-        // For now: save to local storage as placeholder
         appendPredictionHistoryEntry(entry);
 
-        // Step 6: Show success notification
-        setNotification({
-          type: "success",
-          message: `✅ Bet placed! $${params.amount} on "${params.optionLabel}" - Potential return: $${params.potentialReturn.toFixed(2)}`,
-        });
-        setTimeout(() => setNotification(null), 5000);
+        // Step 12: Show success notification
+        toast.success(`✅ Bet placed! $${params.amount} on "${params.optionLabel}" - Potential return: $${params.potentialReturn.toFixed(2)}`);
 
-        console.log("✅ Bet confirmed and saved:", entry);
+        console.log("✅ Bet confirmed and paid:", entry);
       } catch (error) {
         console.error("❌ Bet confirmation failed:", error);
-        setNotification({
-          type: "error",
-          message: `Bet failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-        });
-        setTimeout(() => setNotification(null), 5000);
+
+        let errorMessage = "Unknown error";
+        const errorStr = error instanceof Error ? error.message : String(error);
+
+        if (errorStr.includes("user rejected")) {
+          errorMessage = "Payment cancelled. You rejected the transaction in your wallet.";
+        } else if (errorStr.includes("wallet") && errorStr.includes("unavailable")) {
+          errorMessage = "Wallet not available. Please install Phantom or another Solana wallet.";
+        } else if (errorStr.includes("insufficient")) {
+          errorMessage = "Insufficient balance to complete this transaction.";
+        } else if (errorStr.includes("blockhash")) {
+          errorMessage = "Network error: Unable to get blockhash. Please try again.";
+        } else if (errorStr.includes("403") || errorStr.includes("forbidden")) {
+          errorMessage = "RPC endpoint blocked. Try again in a few moments.";
+        } else if (errorStr.includes("timeout")) {
+          errorMessage = "Transaction timed out. The wallet may not have signed quickly enough.";
+        } else if (errorStr.includes("confirmation")) {
+          errorMessage = "Payment not confirmed on blockchain. Please check your wallet history.";
+        } else {
+          errorMessage = errorStr;
+        }
+
+        toast.error(`❌ Bet failed: ${errorMessage}`);
       }
     },
-    [wallet, allQuestions]
+    [wallet, toast, allQuestions]
   );
 
   const handleConnect = useCallback(async () => {
@@ -165,22 +259,7 @@ export function PredictionsPage() {
   }, [wallet]);
 
   return (
-    <div className="space-y-8 py-8">
-      {/* Notification */}
-      {notification && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div
-            className={`rounded-lg border p-4 ${
-              notification.type === "success"
-                ? "border-green-200 bg-green-50 text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300"
-                : "border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
-            }`}
-          >
-            <p className="text-sm font-medium">{notification.message}</p>
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-6 py-6">
       {/* Header */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-bold text-zinc-950 dark:text-white">Prediction Events</h1>
@@ -216,9 +295,9 @@ export function PredictionsPage() {
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Available Events ({questions.length})</h2>
           <EventsList
-            events={questions}
-            onConfirmBet={handleConfirmBet}
-            isLoading={false}
+              events={questions}
+              onConfirmBet={handleConfirmBet}
+              isLoading={false}
           />
         </div>
       </div>

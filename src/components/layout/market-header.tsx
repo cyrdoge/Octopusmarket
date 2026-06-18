@@ -1,30 +1,21 @@
 /**
  * src/components/layout/market-header.tsx
  * Market header with Radix UI components
- * Desktop: Navigation Menu + Connect Wallet / Dropdown Menu
- * Mobile: Connect Wallet + Hamburger Menu
+ * Desktop: Navigation Menu (Home / Explore / Predictions) + Connect Wallet / Account Dropdown
+ * Mobile: Brand + Hamburger only — nav items & wallet controls live in the mobile drawer
  */
 
 import { OctopusBrand } from "@/components/octopus-market/octopus-brand";
-import { ADMIN_WALLET_ADDRESS } from "@/components/octopus-market/octopus-market-data";
 import { Button } from "@/components/ui/button";
 import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useWallet } from "@/contexts/wallet-context";
-import {
-  SignIn,
-  List,
-  Moon,
-  Sun,
-  CaretDown,
-} from "@phosphor-icons/react";
+import { SignIn, List, CaretDown } from "@phosphor-icons/react";
 
 type MarketHeaderProps = {
   isWalletConnected: boolean;
   walletLabel?: string;
-  isDark: boolean;
-  onToggleTheme: () => void;
   onConnectWallet: () => void;
   onOpenMobileMenu: () => void;
 };
@@ -39,8 +30,6 @@ const navItems = [
 export function MarketHeader({
   isWalletConnected,
   walletLabel = "Connect Wallet",
-  isDark,
-  onToggleTheme,
   onConnectWallet,
   onOpenMobileMenu,
 }: MarketHeaderProps) {
@@ -88,16 +77,12 @@ export function MarketHeader({
             </Button>
           )}
 
-          {/* Dropdown Menu (shown when connected on desktop) */}
+          {/* Account Dropdown (shown when connected) — shows the connected address */}
           {isWalletConnected && (
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <List size={20} weight="bold" />
+                <Button variant="outline" size="sm" className="gap-2">
+                  {walletLabel}
                   <CaretDown size={14} />
                 </Button>
               </DropdownMenu.Trigger>
@@ -107,56 +92,28 @@ export function MarketHeader({
                 align="end"
                 sideOffset={8}
               >
-                <DropdownMenu.Label className="px-4 py-2 text-sm font-semibold text-zinc-900 dark:text-white">
-                  Menu
-                </DropdownMenu.Label>
-                <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
-
                 <DropdownMenu.Item
                   onClick={() => navigate("/dashboard")}
                   className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
                 >
                   Dashboard
                 </DropdownMenu.Item>
-                <DropdownMenu.Item
-                  onClick={() => navigate("/dashboard/my-bets")}
-                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
-                >
-                  My Bets
-                </DropdownMenu.Item>
-                <DropdownMenu.Item
-                  onClick={() => navigate("/dashboard/my-winnings")}
-                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
-                >
-                  My Winnings
-                </DropdownMenu.Item>
 
                 <DropdownMenu.Separator className="my-1 border-orange-100 dark:border-white/10" />
 
-                {wallet.isConnected && wallet.walletAddress === ADMIN_WALLET_ADDRESS && (
-                  <DropdownMenu.Item
-                    onClick={() => navigate("/admin")}
-                    className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
-                  >
-                    Admin Center
-                  </DropdownMenu.Item>
-                )}
+                <DropdownMenu.Item
+                  onClick={() => wallet.disconnect()}
+                  className="px-4 py-2 text-sm text-zinc-700 hover:bg-orange-50 dark:text-zinc-300 dark:hover:bg-zinc-900 cursor-pointer"
+                >
+                  Disconnect
+                </DropdownMenu.Item>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
           )}
         </div>
 
-        {/* Mobile: List My AI CTA + Hamburger Menu */}
-        <div className="flex lg:hidden items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => navigate("/list-my-ai")}
-            className="bg-orange-500 hover:bg-orange-600 text-white"
-          >
-            List My AI
-          </Button>
-
-          {/* Mobile Hamburger Menu */}
+        {/* Mobile: Hamburger only */}
+        <div className="flex lg:hidden items-center">
           <Button
             variant="ghost"
             size="icon"

@@ -110,7 +110,8 @@ export async function ensureAdminSession(walletAddress: string | null) {
   const noncePayload = (await nonceResponse.json()) as AdminNoncePayload;
   const encodedMessage = new TextEncoder().encode(noncePayload.message);
   const signatureResponse = await provider.signMessage(encodedMessage, "utf8");
-  const signature = bytesToBase64(signatureResponse.signature);
+  const signatureBytes = new TextEncoder().encode(signatureResponse.signature);
+  const signature = bytesToBase64(signatureBytes);
 
   const verifyResponse = await fetch("/api/admin-auth/verify", {
     method: "POST",

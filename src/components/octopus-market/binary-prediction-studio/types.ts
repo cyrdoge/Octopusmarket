@@ -1,7 +1,7 @@
 import type { PredictionMarketOption, PredictionMarketQuestion } from "../octopus-market-data";
 import type { AdminCreatedPredictionMarket, PredictionHistoryEntry, PredictionResolutionRecord } from "../prediction-market-store";
 import type { AdminPaymentNotification } from "../octopus-admin";
-import type { PaymentRequest } from "../solana-pay";
+import type { PaymentRequest } from "../solana-payment";
 
 export type BinaryPredictionStudioProps = {
   isWalletConnected: boolean;

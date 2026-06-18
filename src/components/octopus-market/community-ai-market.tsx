@@ -19,6 +19,7 @@ type CommunityAIMarketProps = {
 
 export function CommunityAIMarket({ actorKey, actorLabel }: CommunityAIMarketProps) {
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const [visibleListings, setVisibleListings] = useState<AIListingSubmission[]>([]);
 
   useEffect(() => {
     return subscribeToAIListings(() => {
@@ -26,8 +27,20 @@ export function CommunityAIMarket({ actorKey, actorLabel }: CommunityAIMarketPro
     });
   }, []);
 
-  const visibleListings = useMemo<AIListingSubmission[]>(() => {
-    return readAIListings().filter((listing) => listing.visibleInExplore && listing.status !== "rejected");
+  useEffect(() => {
+    const loadListings = async () => {
+      try {
+        const listings = await readAIListings();
+        setVisibleListings(
+          listings.filter((listing) => listing.visibleInExplore && listing.status !== "rejected")
+        );
+      } catch (error) {
+        console.error("Failed to load listings:", error);
+        setVisibleListings([]);
+      }
+    };
+
+    void loadListings();
   }, [refreshIndex]);
 
   if (visibleListings.length === 0) {

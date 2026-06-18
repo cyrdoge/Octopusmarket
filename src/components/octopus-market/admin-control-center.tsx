@@ -110,9 +110,10 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
   const [walletRecords, setWalletRecords] = useState<RegistryWalletRecord[]>([]);
   const [paymentRecords, setPaymentRecords] = useState<RegistryPaymentRecord[]>([]);
   const [historyRecords, setHistoryRecords] = useState<RegistryHistoryRecord[]>([]);
-  const [resolutions, setResolutions] = useState<Record<string, PredictionResolutionRecord>>(() => readPredictionResolutions());
+  const [resolutions, setResolutions] = useState<Record<string, PredictionResolutionRecord>>({});
   const [selectedPanel, setSelectedPanel] = useState<AdminPanelKey>("pending");
   const [aiListingRefreshIndex, setAIListingRefreshIndex] = useState(0);
+  const [aiListings, setAIListings] = useState<typeof readAIListings extends () => Promise<infer T> ? T : never>([]);
   const [reviewActionByReference, setReviewActionByReference] = useState<Record<string, "approved" | "rejected">>({});
   const [showAdminListingForm, setShowAdminListingForm] = useState(false);
   const [adminListingStatusMessage, setAdminListingStatusMessage] = useState("Admin can publish an AI listing with 0 fee and make it visible immediately on the platform.");
@@ -141,11 +142,20 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
   }, []);
 
   useEffect(() => {
-    void hydrateCentralRegistry({
-      wallets: readConnectedWalletSessions(),
-      payments: readAdminPaymentNotifications(),
-      history: readPredictionHistory(),
-    }).then(loadCentralData);
+    const loadData = async () => {
+      const nextResolutions = await readPredictionResolutions();
+      setResolutions(nextResolutions);
+
+      await hydrateCentralRegistry({
+        wallets: readConnectedWalletSessions(),
+        payments: readAdminPaymentNotifications(),
+        history: await readPredictionHistory(),
+      });
+
+      await loadCentralData();
+    };
+
+    void loadData();
   }, [loadCentralData]);
 
   useEffect(() => {
@@ -165,8 +175,16 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
 
   useEffect(() => {
     return subscribeToPredictionMarketStorage(() => {
-      setResolutions(readPredictionResolutions());
-      void hydrateCentralRegistry({ history: readPredictionHistory() }).then(loadCentralData);
+      const loadResolutions = async () => {
+        const nextResolutions = await readPredictionResolutions();
+        setResolutions(nextResolutions);
+
+        const history = await readPredictionHistory();
+        await hydrateCentralRegistry({ history });
+        await loadCentralData();
+      };
+
+      void loadResolutions();
     });
   }, [loadCentralData]);
 
@@ -175,6 +193,21 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
       setAIListingRefreshIndex((currentValue) => currentValue + 1);
     });
   }, []);
+
+  // Load AI listings when refresh index changes
+  useEffect(() => {
+    const loadListings = async () => {
+      try {
+        const listings = await readAIListings();
+        setAIListings(listings);
+      } catch (error) {
+        console.error("Failed to load AI listings:", error);
+        setAIListings([]);
+      }
+    };
+
+    void loadListings();
+  }, [aiListingRefreshIndex]);
 
   useEffect(() => {
     if (!walletAddress || walletAddress !== predictionMarketTreasuryAddress) {
@@ -357,7 +390,6 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
     });
   }, [pendingNotifications]);
 
-  const aiListings = useMemo(() => readAIListings(), [aiListingRefreshIndex]);
   const pendingAIListings = useMemo(
     () => aiListings.filter((listing) => listing.status === "pending"),
     [aiListings]
@@ -1007,12 +1039,11 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
                           type="button"
                           className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-500"
                           onClick={() =>
-                            updateAIListingSubmission(listing.id, (currentListing) => ({
-                              ...currentListing,
+                            void updateAIListingSubmission(listing.id, {
                               status: "approved",
-                              badge: currentListing.badge,
+                              badge: listing.badge,
                               updatedAt: Date.now(),
-                            }))
+                            })
                           }
                         >
                           Approve listing
@@ -1022,11 +1053,10 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
                           variant="outline"
                           className="rounded-2xl border-red-200 bg-white text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:bg-zinc-950 dark:text-red-300 dark:hover:bg-red-500/10"
                           onClick={() =>
-                            updateAIListingSubmission(listing.id, (currentListing) => ({
-                              ...currentListing,
+                            void updateAIListingSubmission(listing.id, {
                               status: "rejected",
                               updatedAt: Date.now(),
-                            }))
+                            })
                           }
                         >
                           Reject listing
@@ -1036,11 +1066,10 @@ export function AdminControlCenter({ walletAddress }: AdminControlCenterProps) {
                           variant="outline"
                           className="rounded-2xl border-orange-200 bg-white text-zinc-900 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900"
                           onClick={() =>
-                            updateAIListingSubmission(listing.id, (currentListing) => ({
-                              ...currentListing,
-                              badge: currentListing.badge === "blue" ? "none" : "blue",
+                            void updateAIListingSubmission(listing.id, {
+                              badge: listing.badge === "blue" ? "none" : "blue",
                               updatedAt: Date.now(),
-                            }))
+                            })
                           }
                         >
                           Toggle blue badge

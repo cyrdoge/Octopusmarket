@@ -56,6 +56,8 @@ export type RegistryAdminLogRecord = {
     | "create_prediction"
     | "remove_prediction"
     | "resolve_prediction"
+    | "delete_prediction"
+    | "update_prediction"
     | "remove_ai"
     | "approve_listing"
     | "reject_listing"

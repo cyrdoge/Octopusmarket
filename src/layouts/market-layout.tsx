@@ -7,25 +7,15 @@
 
 import { Suspense, lazy } from "react";
 import { Outlet } from "react-router-dom";
-import { useThemeMode } from "@/hooks/use-theme-mode";
 import { useWallet } from "@/contexts/wallet-context";
 import { useNavigation } from "@/contexts/navigation-context";
 import { useChat } from "@/contexts/chat-provider";
+import { useThemeMode } from "@/hooks/use-theme-mode";
 import { MarketHeader } from "@/components/layout/market-header";
 import { MarketFooter } from "@/components/layout/market-footer";
 import { AidoLauncher } from "@/components/layout/aido-launcher";
 import { InlinePanel } from "@/components/layout/inline-panel";
-import { ADMIN_WALLET_ADDRESS } from "@/components/octopus-market/octopus-market-data";
-import {
-  SignIn,
-  SignOut,
-  Wallet,
-  ChartBar,
-  Moon,
-  Sun,
-  GearSix,
-  Database,
-} from "@phosphor-icons/react";
+import { SignIn, SignOut, Moon, Sun } from "@phosphor-icons/react";
 
 const LazyCyrDogeChat = lazy(() =>
   import("@/components/octopus-market/cyrdoge-chat").then((m) => ({
@@ -34,7 +24,6 @@ const LazyCyrDogeChat = lazy(() =>
 );
 
 export function MarketLayout() {
-  const { isDark, toggleTheme } = useThemeMode();
   const wallet = useWallet();
   const nav = useNavigation();
   const chat = useChat();
@@ -45,8 +34,6 @@ export function MarketLayout() {
       <MarketHeader
         isWalletConnected={wallet.isConnected}
         walletLabel={wallet.walletDisplayLabel}
-        isDark={isDark}
-        onToggleTheme={toggleTheme}
         onConnectWallet={wallet.connect}
         onOpenMobileMenu={() => nav.openOverlay("mobile-menu")}
       />
@@ -57,10 +44,7 @@ export function MarketLayout() {
       </main>
 
       {/* Footer */}
-      <MarketFooter
-        onListMyAI={() => nav.navigateToPath("/list-my-ai")}
-        onBrowseMarkets={() => nav.navigateToPath("/explore")}
-      />
+      <MarketFooter/>
 
       {/* Aido Launcher (floating buttons) */}
       <AidoLauncher
@@ -191,15 +175,15 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
   const wallet = useWallet();
   const { isDark, toggleTheme } = useThemeMode();
 
-  const dashboardItems = [
-    { label: "Wallet", path: "/dashboard/wallet-dashboard", icon: Wallet },
-    { label: "My Bets", path: "/dashboard/my-bets", icon: ChartBar },
-    { label: "My Winnings", path: "/dashboard/my-winnings", icon: ChartBar },
-  ];
-
-  const adminItems = [
-    { label: "Admin Center", path: "/admin/control", icon: GearSix },
-    { label: "Database", path: "/admin/database", icon: Database },
+  // Same items as the desktop nav (Home / Explore / Predictions), plus
+  // Dashboard (account, replaces the old Wallet / My Bets / My Winnings group)
+  // and List My AI (no longer a separate CTA in the header on mobile).
+  const mainItems = [
+    ...(wallet.isConnected ? [{ label: "Dashboard", path: "/dashboard" }] : []),
+    { label: "Home", path: "/" },
+    { label: "Explore", path: "/explore" },
+    { label: "Predictions", path: "/predictions" },
+    { label: "List My AI", path: "/list-my-ai" },
   ];
 
   return (
@@ -215,55 +199,33 @@ function MobileMenuContent({ onNavigate }: { onNavigate: (path: string) => void 
             Connect Wallet
           </button>
         ) : (
-          <button
-            onClick={() => wallet.disconnect()}
-            className="w-full rounded-lg border border-orange-200 bg-white px-4 py-3 text-sm font-medium hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2"
-          >
-            <SignOut size={18} weight="bold" />
-            Disconnect
-          </button>
+          <>
+            <div className="w-full rounded-lg border border-orange-200 bg-white px-4 py-2 text-xs font-medium text-zinc-600 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-300">
+              {wallet.walletDisplayLabel}
+            </div>
+            <button
+              onClick={() => wallet.disconnect()}
+              className="w-full rounded-lg border border-orange-200 bg-white px-4 py-3 text-sm font-medium hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2"
+            >
+              <SignOut size={18} weight="bold" />
+              Disconnect
+            </button>
+          </>
         )}
       </div>
 
-      {/* Dashboard (only when connected) */}
-      {wallet.isConnected && (
-        <div className="space-y-1">
-          <p className="px-2 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Dashboard</p>
-          {dashboardItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.path}
-                onClick={() => onNavigate(item.path)}
-                className="flex w-full items-center gap-3 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <Icon size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Admin */}
-      {wallet.isConnected && wallet.walletAddress === ADMIN_WALLET_ADDRESS && (
-        <div className="space-y-1 border-t border-orange-200 pt-3 dark:border-white/10">
-          <p className="px-2 py-2 text-xs font-semibold uppercase text-zinc-600 dark:text-zinc-400">Admin</p>
-          {adminItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.path}
-                onClick={() => onNavigate(item.path)}
-                className="flex w-full items-center gap-3 rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <Icon size={18} weight="bold" className="text-orange-600 dark:text-orange-400" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Main navigation */}
+      <div className="space-y-1">
+        {mainItems.map((item) => (
+          <button
+            key={item.path}
+            onClick={() => onNavigate(item.path)}
+            className="flex w-full items-center rounded-lg border border-orange-200 bg-white px-3 py-2 text-sm hover:border-orange-300 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-900 dark:hover:border-white/20 dark:hover:bg-zinc-800 transition-colors"
+          >
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Theme Toggle */}
       <div className="border-t border-orange-200 pt-3 dark:border-white/10">

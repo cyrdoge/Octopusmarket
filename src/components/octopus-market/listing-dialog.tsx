@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState, useCallback } from "react";
 import {
   AlertCircle,
   ArrowRightLeft,
@@ -27,7 +27,6 @@ import { Switch } from "@/components/ui/switch";
 import {
   clawdTrustThresholdUsd,
   paymentTokenSymbol,
-  platformReserveFeeRate,
   pricingPlans,
   solanaPaymentAddress,
   solanaUsdcMintAddress,
@@ -41,14 +40,13 @@ import {
   type PaymentRequest,
   submitSolanaTransfer,
   validateTransfer,
-} from "@/components/octopus-market/solana-pay";
+} from "@/components/octopus-market/solana-payment";
 import {
-  calculatePercentageAmount,
   formatWalletAddress,
   getSolanaProvider,
-  parseUsdAmount,
   type SolanaProvider,
 } from "@/components/octopus-market/solana-wallet";
+import { useListingPlanSelector } from "@/hooks";
 
 type ListingDialogProps = {
   children: React.ReactNode;
@@ -70,9 +68,18 @@ function getIdleStatusMessage(walletAddress: string | null) {
 }
 
 export function ListingDialog({ children, walletUsername }: ListingDialogProps) {
-  const featuredPlan = pricingPlans.find((plan) => plan.featured) ?? pricingPlans[0];
-  const [selectedPlanName, setSelectedPlanName] = useState(featuredPlan.name);
-  const [holderDiscountEnabled, setHolderDiscountEnabled] = useState(false);
+  const {
+    selectedPlan,
+    holderDiscountEnabled,
+    baseAmount,
+    discountAmount,
+    finalAmount,
+    reserveFee,
+    totalCharge,
+    handlePlanChange,
+    handleHolderDiscountChange,
+  } = useListingPlanSelector();
+
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [walletStatus, setWalletStatus] = useState<WalletStatus>("idle");
   const [statusMessage, setStatusMessage] = useState(getIdleStatusMessage(null));
@@ -80,37 +87,35 @@ export function ListingDialog({ children, walletUsername }: ListingDialogProps) 
   const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
 
   const providerAvailable = Boolean(getSolanaProvider());
-
-  const selectedPlan = useMemo(
-    () => pricingPlans.find((plan) => plan.name === selectedPlanName) ?? featuredPlan,
-    [featuredPlan, selectedPlanName]
-  );
-
-  const baseAmount = useMemo(() => parseUsdAmount(selectedPlan.price), [selectedPlan.price]);
-  const discountAmount = holderDiscountEnabled ? Number((baseAmount * 0.3).toFixed(2)) : 0;
-  const finalAmount = Number((baseAmount - discountAmount).toFixed(2));
-  const reserveFee = calculatePercentageAmount(finalAmount, platformReserveFeeRate);
-  const totalCharge = Number((finalAmount + reserveFee).toFixed(2));
   const isBusy = walletStatus === "connecting" || walletStatus === "signing" || walletStatus === "processing";
 
-  const resetPaymentState = (nextWalletAddress = walletAddress) => {
-    setPaymentReference(null);
-    setPaymentRequest(null);
-    setWalletStatus(nextWalletAddress ? "connected" : "idle");
-    setStatusMessage(getIdleStatusMessage(nextWalletAddress));
-  };
+  const resetPaymentState = useCallback(
+    (nextWalletAddress = walletAddress) => {
+      setPaymentReference(null);
+      setPaymentRequest(null);
+      setWalletStatus(nextWalletAddress ? "connected" : "idle");
+      setStatusMessage(getIdleStatusMessage(nextWalletAddress));
+    },
+    [walletAddress]
+  );
 
-  const handlePlanChange = (planName: string) => {
-    setSelectedPlanName(planName);
-    resetPaymentState();
-  };
+  const handlePlanChangeWithReset = useCallback(
+    (planName: string) => {
+      handlePlanChange(planName);
+      resetPaymentState();
+    },
+    [handlePlanChange, resetPaymentState]
+  );
 
-  const handleHolderDiscountChange = (checked: boolean) => {
-    setHolderDiscountEnabled(checked);
-    resetPaymentState();
-  };
+  const handleHolderDiscountChangeWithReset = useCallback(
+    (checked: boolean) => {
+      handleHolderDiscountChange(checked);
+      resetPaymentState();
+    },
+    [handleHolderDiscountChange, resetPaymentState]
+  );
 
-  const connectWallet = async () => {
+  const connectWallet = useCallback(async () => {
     const provider = getSolanaProvider();
 
     if (!provider) {
@@ -147,9 +152,9 @@ export function ListingDialog({ children, walletUsername }: ListingDialogProps) 
       setStatusMessage("Wallet connection was denied or interrupted.");
       return null;
     }
-  };
+  }, []);
 
-  const handleAutomaticPayment = async () => {
+  const handleAutomaticPayment = useCallback(async () => {
     let provider: SolanaProvider | null = getSolanaProvider();
     let address = walletAddress;
 
@@ -263,7 +268,7 @@ export function ListingDialog({ children, walletUsername }: ListingDialogProps) 
           : "The listing payment request could not be validated."
       );
     }
-  };
+  }, [walletAddress, connectWallet, selectedPlan.name, holderDiscountEnabled, finalAmount, reserveFee, totalCharge, walletUsername]);
 
   const statusIcon =
     walletStatus === "error" ? (
@@ -309,7 +314,7 @@ export function ListingDialog({ children, walletUsername }: ListingDialogProps) 
 
               <RadioGroup
                 value={selectedPlan.name}
-                onValueChange={handlePlanChange}
+                onValueChange={handlePlanChangeWithReset}
                 className="mt-5 gap-4"
               >
                 {pricingPlans.map((plan) => {
@@ -319,7 +324,7 @@ export function ListingDialog({ children, walletUsername }: ListingDialogProps) 
                     <button
                       key={plan.name}
                       type="button"
-                      onClick={() => handlePlanChange(plan.name)}
+                      onClick={() => handlePlanChangeWithReset(plan.name)}
                       className={`w-full rounded-2xl border p-5 text-left transition ${
                         isSelected
                           ? "border-orange-300 bg-white shadow-sm dark:border-orange-400/50 dark:bg-orange-500/10"
@@ -377,7 +382,7 @@ export function ListingDialog({ children, walletUsername }: ListingDialogProps) 
                     Enable the 30% discount if the wallet used for signature belongs to a qualified holder.
                   </p>
                 </div>
-                <Switch checked={holderDiscountEnabled} onCheckedChange={handleHolderDiscountChange} />
+                <Switch checked={holderDiscountEnabled} onCheckedChange={handleHolderDiscountChangeWithReset} />
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-orange-700 dark:text-orange-200">
                 <Badge className="border border-orange-200 bg-white text-orange-700 hover:bg-white dark:border-orange-400/20 dark:bg-orange-500/15 dark:text-orange-200 dark:hover:bg-orange-500/15">
