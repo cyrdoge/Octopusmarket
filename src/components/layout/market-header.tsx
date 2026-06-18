@@ -69,8 +69,9 @@ export function MarketHeader({
           {!isWalletConnected && (
             <Button
               size="sm"
-              onClick={onConnectWallet}
+              onClick={() => void onConnectWallet()}
               className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
+              title="Connect Solana wallet (Phantom, Ledger, or compatible)"
             >
               <SignIn size={16} weight="bold" />
               {walletLabel}

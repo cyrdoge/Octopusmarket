@@ -63,8 +63,26 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setWalletAddress(result.address);
         setIsConnected(true);
         await refreshBalance(result.address);
+      } else {
+        console.warn("Wallet connection returned null");
+        alert("Wallet connection was cancelled or failed. Please try again.");
       }
       return result;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error("Wallet connection error:", errorMsg);
+
+      // User-friendly error messages
+      if (errorMsg.includes("wallet-unavailable")) {
+        alert("Phantom wallet not found. Please install Phantom extension.");
+      } else if (errorMsg.includes("wallet-connect-timeout")) {
+        alert("Wallet connection timeout. Please try again.");
+      } else if (errorMsg.includes("user-rejected")) {
+        alert("You rejected the connection. Please try again if you'd like to connect.");
+      } else {
+        alert("Failed to connect wallet: " + errorMsg);
+      }
+      return null;
     } finally {
       setIsLoading(false);
     }
