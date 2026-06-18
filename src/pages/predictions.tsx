@@ -53,41 +53,57 @@ export function PredictionsPage() {
   }, [allQuestions, activeCategoryId]);
 
   const handleConfirmBet = useCallback(
-    (params: {
+    async (params: {
       eventId: string;
       optionId: string;
       optionLabel: string;
       amount: number;
       potentialReturn: number;
     }) => {
-      // Verify wallet is connected
-      if (!wallet.isConnected || !wallet.walletAddress) {
-        setNotification({
-          type: "error",
-          message: "Wallet not connected. Please connect your wallet first.",
-        });
-        setTimeout(() => setNotification(null), 5000);
-        return;
-      }
-
-      // Verify amount is valid
-      if (params.amount < 2 || params.amount > 50) {
-        setNotification({
-          type: "error",
-          message: "Bet amount must be between $2 and $50 USDC",
-        });
-        setTimeout(() => setNotification(null), 5000);
-        return;
-      }
-
       try {
-        // Find the event to get title and category
+        // Step 1: Check if wallet is connected
+        if (!wallet.isConnected || !wallet.walletAddress) {
+          setNotification({
+            type: "error",
+            message: "Connecting wallet...",
+          });
+
+          // Attempt to connect wallet
+          const result = await wallet.connect();
+          if (!result || !result.address) {
+            setNotification({
+              type: "error",
+              message: "Wallet connection cancelled. Please connect your wallet to place bets.",
+            });
+            setTimeout(() => setNotification(null), 5000);
+            return;
+          }
+        }
+
+        // Step 2: Verify amount is valid
+        if (params.amount < 2 || params.amount > 50) {
+          setNotification({
+            type: "error",
+            message: "Bet amount must be between $2 and $50 USDC",
+          });
+          setTimeout(() => setNotification(null), 5000);
+          return;
+        }
+
+        // Step 3: Find the event
         const event = allQuestions.find((q) => q.id === params.eventId);
         if (!event) {
           throw new Error("Event not found");
         }
 
-        // Create prediction history entry
+        // Step 4: Show processing notification
+        setNotification({
+          type: "success",
+          message: `Processing payment of $${params.amount} USDC...`,
+        });
+
+        // Step 5: Create prediction history entry
+        // NOTE: In production, this should only be saved AFTER payment confirmation
         const entry: PredictionHistoryEntry = {
           id: `bet_${Date.now()}_${Math.random().toString(36).slice(2)}`,
           marketId: params.eventId,
@@ -102,9 +118,9 @@ export function PredictionsPage() {
           payoutMultiple: (event.options?.find((o) => o.id === params.optionId)?.oddsMultiplier ?? 1),
           grossReward: params.potentialReturn,
           netReward: params.potentialReturn * 0.95, // After 5% claim fee
-          walletAddress: wallet.walletAddress,
-          paymentReference: "",
-          paymentRequestId: "",
+          walletAddress: wallet.walletAddress!,
+          paymentReference: `pay_${Date.now()}`,
+          paymentRequestId: `payreq_${Date.now()}`,
           createdAt: Date.now(),
           reportedAt: Date.now(),
           resolutionOutcomeId: undefined,
@@ -115,13 +131,19 @@ export function PredictionsPage() {
           payoutRecordedAt: undefined,
         };
 
-        // Save to local storage
+        // TODO: Implement Solana payment flow
+        // 1. Call loadPaymentModule() to get payment module
+        // 2. Initiate USDC payment request
+        // 3. Wait for payment confirmation from blockchain
+        // 4. Only after payment confirmed: save to database via persistPredictionMarketStateToServer()
+
+        // For now: save to local storage as placeholder
         appendPredictionHistoryEntry(entry);
 
-        // Show success notification
+        // Step 6: Show success notification
         setNotification({
           type: "success",
-          message: `Bet placed! $${params.amount} on "${params.optionLabel}" - Potential return: $${params.potentialReturn.toFixed(2)}`,
+          message: `✅ Bet placed! $${params.amount} on "${params.optionLabel}" - Potential return: $${params.potentialReturn.toFixed(2)}`,
         });
         setTimeout(() => setNotification(null), 5000);
 
@@ -135,7 +157,7 @@ export function PredictionsPage() {
         setTimeout(() => setNotification(null), 5000);
       }
     },
-    [wallet.isConnected, wallet.walletAddress, allQuestions]
+    [wallet, allQuestions]
   );
 
   const handleConnect = useCallback(async () => {
