@@ -21,8 +21,10 @@ export interface EventCardProps {
   /** "vs" renders a team-vs-team header; "simple" renders a plain title */
   mode?: AdminMarketCreationMode;
   /** Required when mode === "vs": the two competing sides */
-  homeTeam?: { name: string; emoji?: string };
-  awayTeam?: { name: string; emoji?: string };
+  homeTeam?: { name: string; emoji?: string; imageSrc?: string };
+  awayTeam?: { name: string; emoji?: string; imageSrc?: string };
+  /** For simple mode: single image */
+  singleImageSrc?: string;
   options: PredictionMarketOption[];
   onConfirmBet: (params: {
     eventId: string;
@@ -46,9 +48,17 @@ function VsHeader({
     <div className="flex items-center justify-between gap-2">
       {/* Home */}
       <div className="flex flex-1 flex-col items-center gap-1.5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-xl">
-          {homeTeam?.emoji ?? "🏠"}
-        </div>
+        {homeTeam?.imageSrc ? (
+          <img
+            src={homeTeam.imageSrc}
+            alt={homeTeam.name}
+            className="h-10 w-10 rounded-full object-cover border border-border"
+          />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-xl">
+            {homeTeam?.emoji ?? "🏠"}
+          </div>
+        )}
         <span className="text-center text-xs font-medium text-foreground">
           {homeTeam?.name ?? "Home"}
         </span>
@@ -61,9 +71,17 @@ function VsHeader({
 
       {/* Away */}
       <div className="flex flex-1 flex-col items-center gap-1.5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-xl">
-          {awayTeam?.emoji ?? "✈️"}
-        </div>
+        {awayTeam?.imageSrc ? (
+          <img
+            src={awayTeam.imageSrc}
+            alt={awayTeam.name}
+            className="h-10 w-10 rounded-full object-cover border border-border"
+          />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-xl">
+            {awayTeam?.emoji ?? "✈️"}
+          </div>
+        )}
         <span className="text-center text-xs font-medium text-foreground">
           {awayTeam?.name ?? "Away"}
         </span>
@@ -75,20 +93,31 @@ function VsHeader({
 function SimpleHeader({
   title,
   categoryLabel,
+  imageSrc,
 }: {
   title: string;
   categoryLabel?: string;
+  imageSrc?: string;
 }) {
   return (
-    <div>
-      {categoryLabel && (
-        <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-          {categoryLabel}
-        </p>
+    <div className="flex gap-3">
+      {imageSrc && (
+        <img
+          src={imageSrc}
+          alt={title}
+          className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+        />
       )}
-      <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-        {title}
-      </p>
+      <div className="flex-1 min-w-0">
+        {categoryLabel && (
+          <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+            {categoryLabel}
+          </p>
+        )}
+        <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+          {title}
+        </p>
+      </div>
     </div>
   );
 }
@@ -102,6 +131,7 @@ export const EventCard = memo(function EventCard({
   mode = "simple",
   homeTeam,
   awayTeam,
+  singleImageSrc,
   options,
   onConfirmBet,
 }: EventCardProps) {
@@ -140,7 +170,7 @@ export const EventCard = memo(function EventCard({
           <VsHeader homeTeam={homeTeam} awayTeam={awayTeam} />
         </>
       ) : (
-        <SimpleHeader title={title} categoryLabel={categoryLabel} />
+        <SimpleHeader title={title} categoryLabel={categoryLabel} imageSrc={singleImageSrc} />
       )}
 
       {/* ── Options ── */}
@@ -158,6 +188,13 @@ export const EventCard = memo(function EventCard({
                   : "border-border bg-muted hover:border-orange-400",
               ].join(" ")}
             >
+              {option.logoSrc && (
+                <img
+                  src={option.logoSrc}
+                  alt={option.label}
+                  className="h-5 w-5 rounded-full object-cover mb-1"
+                />
+              )}
               <span className="text-[11px] text-muted-foreground">
                 {option.label}
               </span>

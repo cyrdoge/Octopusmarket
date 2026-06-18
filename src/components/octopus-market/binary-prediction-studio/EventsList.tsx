@@ -39,23 +39,30 @@ function toEventCardProps(
   const isAdminMarket = "mode" in event;
   const mode = isAdminMarket ? (event as any).mode ?? "simple" : "simple";
 
-  // VS mode: extract home/away from first two options
+  // Get visual metadata
+  const visualType = (event as any).visualType ?? "simple";
+  const leftImage = (event as any).leftCompetitorImageSrc;
+  const rightImage = (event as any).rightCompetitorImageSrc;
+  const singleImage = (event as any).singleImageSrc;
+
+  // VS mode: extract home/away from first two options with images
   const homeTeam =
-    mode === "vs" && event.options?.[0]
-      ? { name: event.options[0].label }
+    (visualType === "vs" || mode === "vs") && event.options?.[0]
+      ? { name: event.options[0].label, imageSrc: leftImage }
       : undefined;
   const awayTeam =
-    mode === "vs" && event.options?.[1]
-      ? { name: event.options[1].label }
+    (visualType === "vs" || mode === "vs") && event.options?.[1]
+      ? { name: event.options[1].label, imageSrc: rightImage }
       : undefined;
 
   return {
     id: event.id,
     title: event.title,
     categoryLabel: (event as any).categoryId ?? (event as any).resolutionLabel,
-    mode,
+    mode: visualType === "vs" ? "vs" : "simple",
     homeTeam,
     awayTeam,
+    singleImageSrc: singleImage,
     options: event.options ?? [],
   };
 }
