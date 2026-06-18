@@ -33,3 +33,17 @@ dist-ssr
 
 # Octopus Market local data
 .octopus-market-data/
+
+# Development documentation (not needed in production/repo)
+PHASE_*.md
+ARCHITECTURE.md
+BEST_PRACTICES.md
+IMPLEMENTATION_GUIDE.md
+LAYOUTS_STRUCTURE.md
+BUNDLE_ANALYSIS.md
+REFACTORING_SUMMARY.md
+PROJECT_STRUCTURE.txt
+
+# Test directories
+src/**/__tests__
+src/__tests__

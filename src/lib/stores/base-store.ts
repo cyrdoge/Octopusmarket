@@ -214,7 +214,7 @@ export abstract class BaseClientStore<T extends { id?: string }> {
         const rows = items.map((item) => this.mapItemToServerRow(item));
 
         if (rows.length > 0) {
-          const { error } = await supabase.from(this.table).upsert(rows, { onConflict: "id" });
+          const { error } = await supabase.from(this.table).upsert(rows as any, { onConflict: "id" });
           if (error) {
             console.error(`[supabase] ${this.table} upsert failed:`, error.message);
           }

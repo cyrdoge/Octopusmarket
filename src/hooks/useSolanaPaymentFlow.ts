@@ -97,7 +97,7 @@ export function useSolanaPaymentFlow(): UseSolanaPaymentFlowReturn {
           label: params.label,
           message: params.message,
           memo: params.memo,
-          metadata: params.metadata,
+          metadata: params.metadata as Record<string, string | number | boolean>,
           walletAddress: params.walletAddress,
         });
 

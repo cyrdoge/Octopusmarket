@@ -3,6 +3,11 @@
   publish = "dist"
 
 [[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
   from = "/api/solana-rpc"
   to = "https://mainnet.helius-rpc.com"
   status = 200

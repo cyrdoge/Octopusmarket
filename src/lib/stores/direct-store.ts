@@ -67,7 +67,7 @@ export abstract class DirectClientStore<T extends { id?: string }> {
 
     const { data, error } = await supabase
       .from(this.supabaseTable)
-      .insert([row])
+      .insert([row] as unknown as any)
       .select()
       .single();
 
@@ -117,7 +117,8 @@ export abstract class DirectClientStore<T extends { id?: string }> {
 
     const { data, error } = await supabase
       .from(this.supabaseTable)
-      .update(row)
+      // @ts-ignore Supabase type inference issue with generic table
+      .update(row as unknown as any)
       .eq("id", id)
       .select()
       .single();

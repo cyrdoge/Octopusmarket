@@ -259,11 +259,11 @@ export function PredictionsPage() {
   }, [wallet]);
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-4 py-6">
       {/* Header */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold text-zinc-950 dark:text-white">Prediction Events</h1>
-        <p className="mt-2 text-lg text-zinc-600 dark:text-zinc-400">
+        <h1 className="text-3xl font-bold text-zinc-950 dark:text-white">Prediction Events</h1>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           Browse all prediction events and place your bets.
         </p>
       </div>
@@ -302,7 +302,7 @@ export function PredictionsPage() {
         </div>
       </div>
 
-      {/* Info Card */}
+      {/* Info Card
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <Card className="border-blue-200 bg-blue-50 dark:border-blue-400/30 dark:bg-blue-500/10">
           <CardContent className="pt-6">
@@ -311,7 +311,7 @@ export function PredictionsPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
     </div>
   );
 }

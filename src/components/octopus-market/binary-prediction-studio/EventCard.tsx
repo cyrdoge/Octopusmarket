@@ -47,15 +47,15 @@ function VsHeader({
   return (
     <div className="flex items-center justify-between gap-3">
       {/* Home */}
-      <div className="flex flex-1 flex-col items-center gap-1.5">
-        <div className="flex h-14 w-14 items-center justify-center rounded-lg border-2 border-orange-500/30 bg-orange-500/10 text-2xl font-bold overflow-hidden">
+      <div className="flex flex-1 items-center gap-2">
+        <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg border-2 border-orange-500/30 bg-orange-500/10 text-lg font-bold overflow-hidden">
           {homeTeam?.imageSrc ? (
             <img src={homeTeam.imageSrc} alt={homeTeam.name} className="h-full w-full object-cover" />
           ) : (
             homeTeam?.emoji ?? "🏠"
           )}
         </div>
-        <span className="line-clamp-2 text-center text-xs font-semibold text-foreground">
+        <span className="line-clamp-2 text-xs font-semibold text-foreground">
           {homeTeam?.name ?? "Home"}
         </span>
       </div>
@@ -66,15 +66,15 @@ function VsHeader({
       </span>
 
       {/* Away */}
-      <div className="flex flex-1 flex-col items-center gap-1.5">
-        <div className="flex h-14 w-14 items-center justify-center rounded-lg border-2 border-orange-500/30 bg-orange-500/10 text-2xl font-bold overflow-hidden">
+      <div className="flex flex-1 items-center gap-2">
+        <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-lg border-2 border-orange-500/30 bg-orange-500/10 text-lg font-bold overflow-hidden">
           {awayTeam?.imageSrc ? (
             <img src={awayTeam.imageSrc} alt={awayTeam.name} className="h-full w-full object-cover" />
           ) : (
             awayTeam?.emoji ?? "✈️"
           )}
         </div>
-        <span className="line-clamp-2 text-center text-xs font-semibold text-foreground">
+        <span className="line-clamp-2 text-xs font-semibold text-foreground">
           {awayTeam?.name ?? "Away"}
         </span>
       </div>
@@ -92,21 +92,22 @@ function SimpleHeader({
   singleImageSrc?: string;
 }) {
   return (
-    // min-h forces all cards to reserve the same header height regardless of title length
     <div className="min-h-[52px] space-y-2">
-      {singleImageSrc && (
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-orange-500/20 bg-orange-500/5 overflow-hidden">
-          <img src={singleImageSrc} alt={title} className="h-full w-full object-cover" />
-        </div>
-      )}
       {categoryLabel && (
         <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
           {categoryLabel}
         </p>
       )}
-      <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-        {title}
-      </p>
+      <div className="flex items-start gap-2">
+        {singleImageSrc && (
+          <div className="shrink-0 flex h-12 w-12 items-center justify-center rounded-lg border border-orange-500/20 bg-orange-500/5 overflow-hidden">
+            <img src={singleImageSrc} alt={title} className="h-full w-full object-cover" />
+          </div>
+        )}
+        <p className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
+          {title}
+        </p>
+      </div>
     </div>
   );
 }

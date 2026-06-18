@@ -86,7 +86,6 @@ type LaunchStatus = "idle" | "loading" | "success" | "error";
 type LaunchOption = "free" | "standard";
 type StudioTab = "token" | "listing";
 type TokenWorkspaceTab = "create" | "tokens";
-type ChartRange = "1H" | "6H" | "24H" | "7D";
 
 type SolfairLaunchStudioProps = {
   isWalletConnected: boolean;
@@ -717,6 +716,7 @@ export function SolfairLaunchStudio({
       volume: number;
     }>
   >([]);
+  const [isChartRefreshing, setIsChartRefreshing] = useState(false);
 
   // Destructure form and file upload hooks for easier access
   const {
@@ -755,6 +755,24 @@ export function SolfairLaunchStudio({
   const { files: fileState } = fileUpload;
   const { logoPreview, logoName } = fileState;
   const { whitepaperName } = fileState;
+
+  // Destructure token board state and handlers
+  const {
+    tokens: octopusTokens,
+    selectedTokenId,
+    isTokenDetailsOpen,
+    copiedContractId,
+    selectedChartRange,
+    isChartRefreshing: isChartRefreshingFromHook,
+    selectedToken,
+    handleSelectToken: handleSelectTokenId,
+    handleOpenTokenDetails,
+    handleCloseTokenDetails,
+    handleCopyContractId,
+    handleSelectChartRange,
+    handleAddToken,
+    handleUpdateToken,
+  } = tokenBoard;
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -866,7 +884,6 @@ export function SolfairLaunchStudio({
   const normalizedTelegramUrl = normalizeLink(projectTelegramUrl);
   const normalizedDiscordUrl = normalizeLink(projectDiscordUrl);
   const normalizedInitialBuyPercent = initialBuyEnabled ? clampInitialBuyPercent(initialBuyPercent) : 0;
-  const selectedToken = tokenBoard.selectedToken ?? tokenBoard.tokens[0];
   const baseSelectedTokenChartData = selectedToken?.chartPoints?.length
     ? selectedToken.chartPoints
     : createFallbackChartPoints(parseFormattedUsdValue(selectedToken?.price) || 1, "24H");
@@ -955,9 +972,7 @@ export function SolfairLaunchStudio({
   };
 
   const updateDevWallet = (index: number, value: string) => {
-    setDevWallets((currentWallets) =>
-      currentWallets.map((wallet, walletIndex) => (walletIndex === index ? value : wallet))
-    );
+    handleDevWalletChange(index, value);
   };
 
   const handleStudioTabChange = (value: string) => {
@@ -967,55 +982,23 @@ export function SolfairLaunchStudio({
   };
 
   const handleCopyContract = async (token: OctopusTokenBoardItem) => {
-    if (!token.contractAddress || typeof window === "undefined") {
+    if (!token.contractAddress) {
       return;
     }
 
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(token.contractAddress);
-      } else {
-        const textArea = window.document.createElement("textarea");
-        textArea.value = token.contractAddress;
-        window.document.body.appendChild(textArea);
-        textArea.select();
-        window.document.execCommand("copy");
-        window.document.body.removeChild(textArea);
-      }
-
-      setCopiedContractId(token.id);
-      window.setTimeout(() => {
-        setCopiedContractId((currentValue) => (currentValue === token.id ? null : currentValue));
-      }, 1600);
-    } catch {
-      setCopiedContractId(null);
-    }
+    await handleCopyContractId(token.contractAddress);
   };
 
   const handleOpenTokenChart = (token: OctopusTokenBoardItem) => {
-    setSelectedTokenId(token.id);
-    setIsTokenDetailsOpen(true);
+    handleOpenTokenDetails(token);
   };
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    setLogoName(file.name);
-    setLogoPreview(URL.createObjectURL(file));
+    fileUpload.handleLogoChange(event);
   };
 
   const handleWhitepaperChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    setWhitepaperName(file.name);
+    fileUpload.handleWhitepaperChange(event);
   };
 
   const handlePrepareLaunch = async () => {
@@ -1152,11 +1135,8 @@ export function SolfairLaunchStudio({
       });
 
       setBagsRequestId(result.requestId);
-      setOctopusTokens((currentTokens) => [
-        nextTokenEntry,
-        ...currentTokens.filter((item) => item.ticker !== symbol.trim().toUpperCase().slice(0, 8)),
-      ].slice(0, 12));
-      setSelectedTokenId(nextTokenEntry.id);
+      handleAddToken(nextTokenEntry);
+      handleSelectTokenId(nextTokenEntry.id);
       setTokenWorkspaceTab("tokens");
 
       if (result.ok) {
@@ -1369,7 +1349,7 @@ export function SolfairLaunchStudio({
                                     type="button"
                                     variant="outline"
                                     disabled={!initialBuyEnabled}
-                                    onClick={() => setInitialBuyPercent(String(percent))}
+                                    onClick={() => handleInitialBuyPercentChange(percent)}
                                     className={`rounded-xl border text-sm ${
                                       isActive
                                         ? "border-orange-300 bg-orange-500 text-white hover:bg-orange-500 dark:border-orange-300 dark:bg-orange-500 dark:text-white"
@@ -1387,7 +1367,7 @@ export function SolfairLaunchStudio({
                               max={5}
                               step={1}
                               disabled={!initialBuyEnabled}
-                              onValueChange={(value) => setInitialBuyPercent(String(clampInitialBuyPercent(value[0] ?? 1)))}
+                              onValueChange={(value) => handleInitialBuyPercentChange(clampInitialBuyPercent(value[0] ?? 1))}
                               className="py-2"
                             />
                           </div>
@@ -1442,7 +1422,7 @@ export function SolfairLaunchStudio({
                             type="button"
                             variant="outline"
                             className="border-orange-200 bg-white text-zinc-950 hover:bg-orange-50 dark:border-white/10 dark:bg-zinc-950 dark:text-white dark:hover:bg-zinc-900"
-                            onClick={() => setDevWallets((currentWallets) => [...currentWallets, ""])}
+                            onClick={() => handleAddDevWallet()}
                           >
                             <Wallet className="size-4" />
                             Add developer wallet
@@ -1451,7 +1431,7 @@ export function SolfairLaunchStudio({
 
                         <Input
                           value={lockWallet}
-                          onChange={(event) => setLockWallet(event.target.value)}
+                          onChange={(event) => handleLockWalletChange(event.target.value)}
                           placeholder="Lock or vesting wallet"
                           className="border-orange-200 bg-white text-zinc-950 dark:border-white/10 dark:bg-zinc-950 dark:text-white"
                         />
@@ -1835,7 +1815,7 @@ export function SolfairLaunchStudio({
                     <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
                       New successful launches from the Create token flow are added here automatically, while the tracked ClawdTrust token keeps its official contract, live Dexscreener price reflection, live holders count, copyable contract address, and native market view inside the More info panel on Octopus Market.
                     </p>
-                    <Dialog open={isTokenDetailsOpen} onOpenChange={setIsTokenDetailsOpen}>
+                    <Dialog open={isTokenDetailsOpen} onOpenChange={(isOpen) => isOpen ? null : handleCloseTokenDetails()}>
                       <DialogContent className="max-h-[90vh] overflow-y-auto border-orange-200 bg-white text-zinc-950 sm:max-w-5xl dark:border-white/10 dark:bg-zinc-950 dark:text-white">
                         {selectedToken ? (
                           <>
@@ -1953,7 +1933,7 @@ export function SolfairLaunchStudio({
                                         key={range}
                                         type="button"
                                         variant="outline"
-                                        onClick={() => setSelectedChartRange(range)}
+                                        onClick={() => handleSelectChartRange(range)}
                                         className={`h-9 rounded-full px-4 text-xs font-semibold ${
                                           selectedChartRange === range
                                             ? "border-orange-300 bg-orange-500 text-white hover:bg-orange-500 dark:border-orange-300 dark:bg-orange-500 dark:text-white"

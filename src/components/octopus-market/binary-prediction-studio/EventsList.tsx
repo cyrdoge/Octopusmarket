@@ -39,19 +39,25 @@ function toEventCardProps(
   const isAdminMarket = "mode" in event;
   const mode = isAdminMarket ? (event as any).mode ?? "simple" : "simple";
 
-  // VS mode: extract home/away from first two options with images
+  // VS mode: use dedicated competitor fields for name + image.
+  // Falls back to options[0/1].label only if the field is absent (legacy data).
   const homeTeam =
     mode === "vs" && event.options?.[0]
       ? {
-          name: event.options[0].label,
-          imageSrc: (event as any).leftCompetitorImageSrc,
+          name:
+            (event as any).leftCompetitorName?.trim() ||
+            event.options[0].label,
+          imageSrc: (event as any).leftCompetitorImageSrc || undefined,
         }
       : undefined;
+
   const awayTeam =
     mode === "vs" && event.options?.[1]
       ? {
-          name: event.options[1].label,
-          imageSrc: (event as any).rightCompetitorImageSrc,
+          name:
+            (event as any).rightCompetitorName?.trim() ||
+            event.options[1].label,
+          imageSrc: (event as any).rightCompetitorImageSrc || undefined,
         }
       : undefined;
 
@@ -62,7 +68,7 @@ function toEventCardProps(
     mode,
     homeTeam,
     awayTeam,
-    singleImageSrc: (event as any).singleImageSrc,
+    singleImageSrc: (event as any).singleImageSrc || undefined,
     options: event.options ?? [],
   };
 }
