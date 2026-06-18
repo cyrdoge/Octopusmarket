@@ -47,42 +47,38 @@ function VsHeader({
   return (
     <div className="flex items-center justify-between gap-2">
       {/* Home */}
-      <div className="flex flex-1 flex-col items-center gap-1.5">
+      <div className="flex flex-1 flex-col items-center gap-1">
         {homeTeam?.imageSrc ? (
           <img
             src={homeTeam.imageSrc}
             alt={homeTeam.name}
-            className="h-10 w-10 rounded-full object-cover border border-border"
+            className="h-10 w-10 rounded-md object-cover border border-border"
           />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-xl">
-            {homeTeam?.emoji ?? "🏠"}
-          </div>
+          <div className="h-10 w-10 rounded-md border border-border bg-muted" />
         )}
-        <span className="text-center text-xs font-medium text-foreground">
+        <span className="text-center text-xs font-medium text-foreground line-clamp-1">
           {homeTeam?.name ?? "Home"}
         </span>
       </div>
 
       {/* VS badge */}
-      <span className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+      <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-medium text-muted-foreground flex-shrink-0">
         VS
       </span>
 
       {/* Away */}
-      <div className="flex flex-1 flex-col items-center gap-1.5">
+      <div className="flex flex-1 flex-col items-center gap-1">
         {awayTeam?.imageSrc ? (
           <img
             src={awayTeam.imageSrc}
             alt={awayTeam.name}
-            className="h-10 w-10 rounded-full object-cover border border-border"
+            className="h-10 w-10 rounded-md object-cover border border-border"
           />
         ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted text-xl">
-            {awayTeam?.emoji ?? "✈️"}
-          </div>
+          <div className="h-10 w-10 rounded-md border border-border bg-muted" />
         )}
-        <span className="text-center text-xs font-medium text-foreground">
+        <span className="text-center text-xs font-medium text-foreground line-clamp-1">
           {awayTeam?.name ?? "Away"}
         </span>
       </div>
@@ -100,17 +96,17 @@ function SimpleHeader({
   imageSrc?: string;
 }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-2">
       {imageSrc && (
         <img
           src={imageSrc}
           alt={title}
-          className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+          className="h-12 w-12 rounded-md object-cover flex-shrink-0 border border-border"
         />
       )}
       <div className="flex-1 min-w-0">
         {categoryLabel && (
-          <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="mb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
             {categoryLabel}
           </p>
         )}
@@ -157,13 +153,13 @@ export const EventCard = memo(function EventCard({
   }, [id, selectedOption, amount, potentialReturn, onConfirmBet]);
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-orange-500">
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 transition-colors hover:border-orange-500">
 
       {/* ── Header ── */}
       {mode === "vs" ? (
         <>
           {categoryLabel && (
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
               {categoryLabel}
             </p>
           )}
@@ -192,7 +188,7 @@ export const EventCard = memo(function EventCard({
                 <img
                   src={option.logoSrc}
                   alt={option.label}
-                  className="h-5 w-5 rounded-full object-cover mb-1"
+                  className="h-5 w-5 rounded-sm object-cover mb-1 border border-border"
                 />
               )}
               <span className="text-[11px] text-muted-foreground">
@@ -207,32 +203,32 @@ export const EventCard = memo(function EventCard({
       </div>
 
       {/* ── Bet simulator ── */}
-      <div className="flex flex-col gap-2.5 rounded-lg bg-muted p-3">
+      <div className="flex flex-col gap-2 rounded-lg bg-muted p-2.5">
         {/* Amount input */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">Mon pari</span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <input
               type="number"
               min="1"
               step="1"
               value={betAmount}
               onChange={(e) => setBetAmount(e.target.value)}
-              className="w-24 rounded-md border border-border bg-background px-2 py-1 text-right text-sm font-medium text-foreground focus:border-orange-500 focus:outline-none"
+              className="w-20 rounded-md border border-border bg-background px-2 py-1 text-right text-xs font-medium text-foreground focus:border-orange-500 focus:outline-none"
             />
             <span className="text-xs text-muted-foreground">USDC</span>
           </div>
         </div>
 
         {/* Gain display */}
-        <div className="flex items-center justify-between border-t border-border pt-2.5">
+        <div className="flex items-center justify-between border-t border-border pt-2">
           <div>
             <p className="text-xs text-muted-foreground">Gain potentiel</p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-[10px] text-muted-foreground">
               +{formatCurrency(profit)} de profit
             </p>
           </div>
-          <p className="text-xl font-medium text-green-500">
+          <p className="text-lg font-medium text-green-500">
             {formatCurrency(potentialReturn)}
           </p>
         </div>
@@ -242,9 +238,9 @@ export const EventCard = memo(function EventCard({
       <button
         onClick={handleConfirm}
         disabled={amount <= 0 || !selectedOption}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-orange-500 py-2.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-orange-500 py-2 text-xs font-medium text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
       >
-        <TrendingUp size={15} />
+        <TrendingUp size={14} />
         Confirmer le pari
       </button>
     </div>
