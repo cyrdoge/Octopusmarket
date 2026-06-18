@@ -52,10 +52,10 @@ function VsHeader({
           <img
             src={homeTeam.imageSrc}
             alt={homeTeam.name}
-            className="h-10 w-10 rounded-md object-cover border border-border"
+            className="h-10 w-10 rounded-full object-cover border border-border"
           />
         ) : (
-          <div className="h-10 w-10 rounded-md border border-border bg-muted" />
+          <div className="h-10 w-10 rounded-full border border-border bg-muted" />
         )}
         <span className="text-center text-xs font-medium text-foreground line-clamp-1">
           {homeTeam?.name ?? "Home"}
@@ -73,10 +73,10 @@ function VsHeader({
           <img
             src={awayTeam.imageSrc}
             alt={awayTeam.name}
-            className="h-10 w-10 rounded-md object-cover border border-border"
+            className="h-10 w-10 rounded-full object-cover border border-border"
           />
         ) : (
-          <div className="h-10 w-10 rounded-md border border-border bg-muted" />
+          <div className="h-10 w-10 rounded-full border border-border bg-muted" />
         )}
         <span className="text-center text-xs font-medium text-foreground line-clamp-1">
           {awayTeam?.name ?? "Away"}
@@ -180,15 +180,15 @@ export const EventCard = memo(function EventCard({
               className={[
                 "flex flex-1 flex-col items-center rounded-lg border px-2 py-2 transition-all",
                 isSelected
-                  ? "border-orange-500 bg-orange-500/10"
-                  : "border-border bg-muted hover:border-orange-400",
+                  ? "border-orange-500 bg-orange-500/5"
+                  : "border-border bg-background/50 hover:border-orange-400",
               ].join(" ")}
             >
               {option.logoSrc && (
                 <img
                   src={option.logoSrc}
                   alt={option.label}
-                  className="h-5 w-5 rounded-sm object-cover mb-1 border border-border"
+                  className="h-5 w-5 rounded-full object-cover mb-1"
                 />
               )}
               <span className="text-[11px] text-muted-foreground">
@@ -203,7 +203,7 @@ export const EventCard = memo(function EventCard({
       </div>
 
       {/* ── Bet simulator ── */}
-      <div className="flex flex-col gap-2 rounded-lg bg-muted p-2.5">
+      <div className="flex flex-col gap-2 rounded-lg bg-background/40 p-2.5">
         {/* Amount input */}
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-muted-foreground">Mon pari</span>
@@ -221,7 +221,7 @@ export const EventCard = memo(function EventCard({
         </div>
 
         {/* Gain display */}
-        <div className="flex items-center justify-between border-t border-border pt-2">
+        <div className="flex items-center justify-between border-t border-border/30 pt-2">
           <div>
             <p className="text-xs text-muted-foreground">Gain potentiel</p>
             <p className="text-[10px] text-muted-foreground">
