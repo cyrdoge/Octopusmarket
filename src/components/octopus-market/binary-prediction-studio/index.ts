@@ -15,7 +15,8 @@ export * from "./types";
 export * from "./utils";
 
 // Export refactored sub-components
-export { EventsListEnhanced } from "./EventsList-Enhanced";
+export { EventsList } from "./EventsList";
+export { EventCard } from "./EventCard";
 export { UserHistory } from "./UserHistory";
 export { BettingInterface } from "./BettingInterface";
 export { AdminPanel } from "./AdminPanel";

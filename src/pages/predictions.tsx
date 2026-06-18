@@ -16,7 +16,7 @@ import {
   subscribeToPredictionMarketStorage,
   type AdminCreatedPredictionMarket,
 } from "@/components/octopus-market/prediction-market-store";
-import { EventsListEnhanced } from "@/components/octopus-market/binary-prediction-studio/index";
+import { EventsList } from "@/components/octopus-market/binary-prediction-studio/index";
 
 export function PredictionsPage() {
   const wallet = useWallet();
@@ -49,10 +49,19 @@ export function PredictionsPage() {
     });
   }, [allQuestions, activeCategoryId]);
 
-  const handleSelectEvent = useCallback((eventId: string) => {
-    console.log("Selected event:", eventId);
-    // TODO: Navigate to event details or open betting modal
-  }, []);
+  const handleConfirmBet = useCallback(
+    (params: {
+      eventId: string;
+      optionId: string;
+      optionLabel: string;
+      amount: number;
+      potentialReturn: number;
+    }) => {
+      console.log("Bet confirmed:", params);
+      // TODO: Submit bet to blockchain
+    },
+    []
+  );
 
   const handleConnect = useCallback(async () => {
     return wallet.connect().then((result) => result?.address ?? null);
@@ -94,9 +103,9 @@ export function PredictionsPage() {
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Available Events ({questions.length})</h2>
-          <EventsListEnhanced
+          <EventsList
             events={questions}
-            onSelectEvent={handleSelectEvent}
+            onConfirmBet={handleConfirmBet}
             isLoading={false}
           />
         </div>
